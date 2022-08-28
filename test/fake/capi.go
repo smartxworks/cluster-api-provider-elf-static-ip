@@ -17,15 +17,12 @@ limitations under the License.
 package fake
 
 import (
-	ipamv1 "github.com/metal3-io/ip-address-manager/api/v1alpha1"
 	capev1 "github.com/smartxworks/cluster-api-provider-elf/api/v1beta1"
 	"github.com/smartxworks/cluster-api-provider-elf/pkg/context"
 	capefake "github.com/smartxworks/cluster-api-provider-elf/test/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/storage/names"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-
-	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam"
 )
 
 func NewClusterAndMachineObjects() (*capev1.ElfCluster, *capiv1.Cluster, *capev1.ElfMachine, *capiv1.Machine, *capev1.ElfMachineTemplate) {
@@ -52,13 +49,4 @@ func InitOwnerReferences(
 	elfCluster *capev1.ElfCluster, cluster *capiv1.Cluster,
 	elfMachine *capev1.ElfMachine, machine *capiv1.Machine) {
 	capefake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
-}
-
-func SetIPPoolForMachineTemplate(elfMachineTemplate *capev1.ElfMachineTemplate, pool *ipamv1.IPPool) {
-	labels := elfMachineTemplate.Labels
-	if labels == nil {
-		labels = make(map[string]string)
-	}
-
-	labels[ipam.ClusterIPPoolNameKey] = pool.Name
 }

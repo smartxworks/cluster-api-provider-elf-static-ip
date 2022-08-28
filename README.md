@@ -140,6 +140,28 @@ spec:
       template: de6efbf8-fdae-4cad-9305-231c67d521a8
 ```
 
+### 默认 IPPool
+
+如果设置了默认的 IPPool，当集群没有配置 IPPool 的时候，会选择默认的 IPPool。
+
+```yaml
+apiVersion: ipam.metal3.io/v1alpha1
+kind: IPPool
+metadata:
+  name: ip-pool-1
+  namespace: cape-system # 默认 IPPool 需要指定该命名空间
+  labels:
+    cluster.x-k8s.io/ip-pool-default: "" # 默认 IPPool 需要指定该标签
+spec:
+  pools:
+    - start: 10.255.160.10
+      end: 10.255.160.20
+      prefix: 16
+      gateway: 10.255.0.1
+  prefix: 16
+  gateway: 10.255.0.1
+```
+
 ## 开发
 
 ### 部署 Cluster API Provider ELF Static IP

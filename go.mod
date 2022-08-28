@@ -1,6 +1,6 @@
 module github.com/smartxworks/cluster-api-provider-elf-static-ip
 
-go 1.17
+go 1.18
 
 require (
 	github.com/metal3-io/ip-address-manager v1.1.3
@@ -58,7 +58,7 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/uuid v1.2.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

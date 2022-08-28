@@ -17,12 +17,13 @@ limitations under the License.
 package context
 
 import (
+	capecontext "github.com/smartxworks/cluster-api-provider-elf/pkg/context"
+
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam"
-	"github.com/smartxworks/cluster-api-provider-elf/pkg/context"
 )
 
 // MachineContext is a Go context used with a ElfMachine.
 type MachineContext struct {
-	*context.MachineContext
+	*capecontext.MachineContext
 	IPAMService ipam.IPAddressManager
 }

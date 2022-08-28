@@ -21,7 +21,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type IPAddressManager interface {
@@ -30,10 +29,10 @@ type IPAddressManager interface {
 
 	// AllocateIP requests a new static ip for the resource, if it does not exist
 	// source ip pool is fetched using optional poolSelector, default is using poolKey
-	AllocateIP(ctx goctx.Context, name string, pool IPPool, ownerObj runtime.Object) (IPAddress, error)
+	AllocateIP(ctx goctx.Context, name string, pool IPPool, owner metav1.Object) (IPAddress, error)
 
 	// DeallocateIP releases static ip back to the ip pool
-	DeallocateIP(ctx goctx.Context, name string, pool IPPool, ownerObj runtime.Object) error
+	DeallocateIP(ctx goctx.Context, name string, pool IPPool) error
 
 	// GetAvailableIPPool gets an available ip pool in the cluster namespace
 	GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[string]string, clusterMeta metav1.ObjectMeta) (IPPool, error)

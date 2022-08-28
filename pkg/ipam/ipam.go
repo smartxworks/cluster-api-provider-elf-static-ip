@@ -24,11 +24,11 @@ const (
 	ClusterIPPoolNameKey      = "cluster.x-k8s.io/ip-pool-name"
 	ClusterIPPoolGroupKey     = "cluster.x-k8s.io/ip-pool-group"
 	ClusterIPPoolNamespaceKey = "cluster.x-k8s.io/ip-pool-namespace"
+	IPOwnerNameKey            = "cluster.x-k8s.io/ip-owner-name"
 )
 
-type IPAMType string
-
-// IPAM providers.
+// Default IPPool.
 const (
-	IPAMTypeMetal3io IPAMType = "metal3io"
+	DefaultIPPoolNamespace = "cape-system"
+	DefaultIPPoolKey       = "cluster.x-k8s.io/ip-pool-default"
 )

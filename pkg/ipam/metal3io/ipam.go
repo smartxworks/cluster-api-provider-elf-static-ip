@@ -23,10 +23,8 @@ import (
 	"github.com/go-logr/logr"
 	ipamv1 "github.com/metal3-io/ip-address-manager/api/v1alpha1"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	apitypes "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -69,7 +67,7 @@ func (m *Metal3IPAM) GetIP(ctx goctx.Context, ipName string, ipPool ipam.IPPool)
 	return toIPAddress(ip), nil
 }
 
-func (m *Metal3IPAM) AllocateIP(ctx goctx.Context, ipName string, pool ipam.IPPool, ownerObj runtime.Object) (ipam.IPAddress, error) {
+func (m *Metal3IPAM) AllocateIP(ctx goctx.Context, ipName string, pool ipam.IPPool, owner metav1.Object) (ipam.IPAddress, error) {
 	ipClaim, err := m.getIPClaim(ctx, pool, ipName)
 	if err != nil {
 		m.logger.Info(fmt.Sprintf("failed to get IPClaim %s", ipName))
@@ -83,14 +81,28 @@ func (m *Metal3IPAM) AllocateIP(ctx goctx.Context, ipName string, pool ipam.IPPo
 	}
 
 	// create a new ip claim
-	if err = m.createIPClaim(ctx, pool, ipName, ipamutil.GetObjRef(ownerObj)); err != nil {
+	if err = m.createIPClaim(ctx, pool, ipName, owner); err != nil {
 		return nil, err
 	}
 
 	return nil, nil
 }
 
-func (m *Metal3IPAM) DeallocateIP(ctx goctx.Context, name string, pool ipam.IPPool, ownerObj runtime.Object) error {
+func (m *Metal3IPAM) DeallocateIP(ctx goctx.Context, ipName string, pool ipam.IPPool) error {
+	ipClaim, err := m.getIPClaim(ctx, pool, ipName)
+	if err != nil {
+		return err
+	}
+	if ipClaim == nil {
+		return nil
+	}
+
+	if err := m.Client.Delete(ctx, ipClaim); err != nil {
+		return errors.Wrapf(err, "failed to delete IPClaim %s", ipName)
+	}
+
+	m.logger.Info(fmt.Sprintf("IPClaim %s already deleted", ipName))
+
 	return nil
 }
 
@@ -108,10 +120,14 @@ func (m *Metal3IPAM) GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[s
 
 			return nil, errors.Wrapf(err, "failed to get IPPool %s", label)
 		}
+
+		return toIPPool(ipPool), nil
 	}
 
-	// use labels 'ip-pool-group' & 'network-name' to select the ip-pool
+	namespace := getIPPoolNamespace(clusterMeta)
 	matchLabels := map[string]string{}
+
+	// use labels 'ip-pool-group' & 'network-name' to select the ip-pool
 	if label, ok := poolMatchLabels[ipam.ClusterIPPoolGroupKey]; ok && label != "" {
 		matchLabels[ipam.ClusterIPPoolGroupKey] = label
 	}
@@ -119,11 +135,17 @@ func (m *Metal3IPAM) GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[s
 		matchLabels[ipam.ClusterNetworkNameKey] = label
 	}
 
+	// use default ip-pool
+	if len(matchLabels) == 0 {
+		namespace = ipam.DefaultIPPoolNamespace
+		matchLabels[ipam.DefaultIPPoolKey] = ""
+	}
+
 	ipPoolList := &ipamv1.IPPoolList{}
 	if err := m.List(
 		ctx,
 		ipPoolList,
-		client.InNamespace(getIPPoolNamespace(clusterMeta)),
+		client.InNamespace(namespace),
 		client.MatchingLabels(matchLabels)); err != nil {
 		return nil, err
 	}
@@ -132,8 +154,6 @@ func (m *Metal3IPAM) GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[s
 		m.logger.Info("failed to get a matching IPPool")
 		return nil, nil
 	}
-
-	// TODO: handle selection based on ip address availability
 	ipPool = ipPoolList.Items[0]
 
 	m.logger.Info(fmt.Sprintf("IPPool %s is available", ipPool.Name))
@@ -153,7 +173,7 @@ func (m *Metal3IPAM) getIPClaim(ctx goctx.Context, pool ipam.IPPool, claimName s
 	return &ipClaim, nil
 }
 
-func (m *Metal3IPAM) createIPClaim(ctx goctx.Context, pool ipam.IPPool, claimName string, ownerRef corev1.ObjectReference) error {
+func (m *Metal3IPAM) createIPClaim(ctx goctx.Context, pool ipam.IPPool, claimName string, owner metav1.Object) error {
 	m.logger.Info(fmt.Sprintf("create IPClaim %s", claimName))
 
 	var ipPool ipamv1.IPPool
@@ -178,15 +198,8 @@ func (m *Metal3IPAM) createIPClaim(ctx goctx.Context, pool ipam.IPPool, claimNam
 		},
 	}
 
-	// set owner ref
-	if len(ownerRef.APIVersion) > 0 && len(ownerRef.Kind) > 0 {
-		ref := metav1.OwnerReference{
-			APIVersion: ownerRef.APIVersion,
-			Kind:       ownerRef.Kind,
-			Name:       ownerRef.Name,
-			UID:        ownerRef.UID,
-		}
-		ipClaim.SetOwnerReferences([]metav1.OwnerReference{ref})
+	if owner != nil {
+		ipClaim.Labels = map[string]string{ipam.IPOwnerNameKey: owner.GetName()}
 	}
 
 	if err := m.Client.Create(ctx, ipClaim); err != nil {

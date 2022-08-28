@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	ctrlmgr "sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -57,6 +58,13 @@ import (
 //+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipclaims/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipaddresses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipaddresses/status,verbs=get;update;patch
+
+const (
+	// MachineIPFinalizer allows ReconcileElfMachine to clean up static ip
+	// resources associated with ElfMachine before removing it from the
+	// API Server.
+	MachineIPFinalizer = "elfmachineip.infrastructure.cluster.x-k8s.io"
+)
 
 // ElfMachineReconciler reconciles a ElfMachine object.
 type ElfMachineReconciler struct {
@@ -99,10 +107,8 @@ func (r *ElfMachineReconciler) Reconcile(ctx goctx.Context, req ctrl.Request) (_
 		return reconcile.Result{}, err
 	}
 
-	// If the ElfMachine is in an delete/error state, return early.
-	if !elfMachine.ObjectMeta.DeletionTimestamp.IsZero() {
-		return reconcile.Result{}, nil
-	} else if elfMachine.IsFailed() {
+	// If the ElfMachine is in an error state, return early.
+	if elfMachine.IsFailed() {
 		r.Logger.V(2).Info("Error state detected, skipping reconciliation", "namespace", elfMachine.Namespace, "elfMachine", elfMachine.Name)
 		return reconcile.Result{}, nil
 	}
@@ -119,7 +125,6 @@ func (r *ElfMachineReconciler) Reconcile(ctx goctx.Context, req ctrl.Request) (_
 
 	// Fetch the CAPI Cluster.
 	cluster, err := capiutil.GetClusterFromMetadata(r, r.Client, machine.ObjectMeta)
-	//nolint:nilerr
 	if err != nil {
 		r.Logger.Info("Machine is missing cluster label or cluster does not exist", "namespace", machine.Namespace, "machine", machine.Name)
 
@@ -133,6 +138,12 @@ func (r *ElfMachineReconciler) Reconcile(ctx goctx.Context, req ctrl.Request) (_
 
 	logger := r.Logger.WithValues("namespace", elfMachine.Namespace, "cluster", cluster.Name, "elfMachine", elfMachine.Name)
 
+	// Create the patch helper.
+	patchHelper, err := patch.NewHelper(&elfMachine, r.Client)
+	if err != nil {
+		return reconcile.Result{}, errors.Wrapf(err, "failed to init patch helper for %s %s/%s", elfMachine.GroupVersionKind(), elfMachine.Namespace, elfMachine.Name)
+	}
+
 	// Create the machine context for this request.
 	machineContext := &context.MachineContext{
 		IPAMService: metal3io.NewIpam(r.Client, r.Logger),
@@ -142,10 +153,65 @@ func (r *ElfMachineReconciler) Reconcile(ctx goctx.Context, req ctrl.Request) (_
 			Machine:           machine,
 			ElfMachine:        &elfMachine,
 			Logger:            logger,
+			PatchHelper:       patchHelper,
 		},
 	}
 
+	// Always issue a patch when exiting this function so changes to the
+	// resource are patched back to the API server.
+	defer func() {
+		// Patch the ElfMachine resource.
+		if err := machineContext.Patch(); err != nil {
+			if reterr == nil {
+				reterr = err
+			}
+
+			machineContext.Logger.Error(err, "patch failed", "elfMachine", machineContext.String())
+		}
+	}()
+
+	// Handle deleted machines
+	if !elfMachine.ObjectMeta.DeletionTimestamp.IsZero() {
+		return r.reconcileDelete(machineContext)
+	}
+
 	return r.reconcileIPAddress(machineContext)
+}
+
+func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (reconcile.Result, error) {
+	ctx.Logger.Info("Reconciling ElfMachine IP delete")
+
+	if !ipamutil.HasStaticIPDevice(ctx.ElfMachine.Spec.Network.Devices) {
+		ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineIPFinalizer)
+		return ctrl.Result{}, nil
+	}
+
+	ipPool, err := r.getIPPool(ctx)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if ipPool == nil {
+		return ctrl.Result{}, nil
+	}
+
+	var errs []error
+	for i := 0; i < len(ctx.ElfMachine.Spec.Network.Devices); i++ {
+		if !ipamutil.IsStaticIPDevice(ctx.ElfMachine.Spec.Network.Devices[i]) {
+			continue
+		}
+
+		if err := ctx.IPAMService.DeallocateIP(ctx, ipamutil.GetFormattedClaimName(ctx.ElfMachine.Name, i), ipPool); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		return reconcile.Result{RequeueAfter: config.DefaultRequeue}, nil
+	} else {
+		ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineIPFinalizer)
+	}
+
+	return reconcile.Result{}, nil
 }
 
 func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (reconcile.Result, error) {
@@ -158,30 +224,19 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 	}
 
 	if !ipamutil.NeedsAllocateIP(devices) {
-		ctx.Logger.V(2).Info("no need to allocate IP")
+		ctx.Logger.V(3).Info("no need to allocate IP")
 		return ctrl.Result{}, nil
 	}
 
-	poolMatchLabels, err := r.getIPPoolMatchLabels(ctx)
-	if err != nil {
-		ctx.Logger.Error(err, "failed to get IPPool match labels")
-		return ctrl.Result{}, nil
-	}
+	// If the ElfMachine doesn't have our finalizer, add it.
+	ctrlutil.AddFinalizer(ctx.ElfMachine, MachineIPFinalizer)
 
-	ipPool, err := ctx.IPAMService.GetAvailableIPPool(ctx, poolMatchLabels, ctx.Cluster.ObjectMeta)
+	ipPool, err := r.getIPPool(ctx)
 	if err != nil {
-		ctx.Logger.Error(err, "failed to get an available IPPool")
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 	if ipPool == nil {
-		ctx.Logger.Info("waiting for IPPool to be available")
 		return ctrl.Result{}, nil
-	}
-
-	// Create the patch helper.
-	patchHelper, err := patch.NewHelper(ctx.ElfMachine, r.Client)
-	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "failed to init patch helper for %s %s/%s", ctx.ElfMachine.GroupVersionKind(), ctx.ElfMachine.Namespace, ctx.ElfMachine.Name)
 	}
 
 	var errs []error
@@ -198,10 +253,6 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 		if result.RequeueAfter != 0 {
 			requeueAfter = result.RequeueAfter
 		}
-	}
-
-	if err := patchHelper.Patch(ctx, ctx.ElfMachine); err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "failed to patch ElfMachine to set static IP")
 	}
 
 	if len(errs) > 0 {
@@ -247,9 +298,29 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 	return ctrl.Result{}, nil
 }
 
+func (r *ElfMachineReconciler) getIPPool(ctx *context.MachineContext) (ipam.IPPool, error) {
+	poolMatchLabels, err := r.getIPPoolMatchLabels(ctx)
+	if err != nil {
+		ctx.Logger.Error(err, "failed to get IPPool match labels")
+		return nil, err
+	}
+
+	ipPool, err := ctx.IPAMService.GetAvailableIPPool(ctx, poolMatchLabels, ctx.Cluster.ObjectMeta)
+	if err != nil {
+		ctx.Logger.Error(err, "failed to get an available IPPool")
+		return nil, err
+	}
+	if ipPool == nil {
+		ctx.Logger.Info("waiting for IPPool to be available")
+		return nil, nil
+	}
+
+	return ipPool, nil
+}
+
 // getIPPoolMatchLabels matchs labels for the IPPool are retrieved from the ElfMachineTemplate.
 func (r *ElfMachineReconciler) getIPPoolMatchLabels(ctx *context.MachineContext) (map[string]string, error) {
-	vmTemplateName, ok := ctx.ElfMachine.GetAnnotations()[capiv1.TemplateClonedFromNameAnnotation]
+	templateName, ok := ctx.ElfMachine.GetAnnotations()[capiv1.TemplateClonedFromNameAnnotation]
 	if !ok {
 		return nil, errors.Errorf("ElfMachine %s has no value set in the 'cloned-from-name' annotation", ctx.ElfMachine.Name)
 	}
@@ -257,9 +328,9 @@ func (r *ElfMachineReconciler) getIPPoolMatchLabels(ctx *context.MachineContext)
 	var elfMachineTemplate capev1.ElfMachineTemplate
 	if err := ctx.Client.Get(ctx, apitypes.NamespacedName{
 		Namespace: ctx.ElfMachine.Namespace,
-		Name:      vmTemplateName,
+		Name:      templateName,
 	}, &elfMachineTemplate); err != nil {
-		return nil, errors.Wrapf(err, "failed to get ElfMachineTemplate %s", vmTemplateName)
+		return nil, errors.Wrapf(err, "failed to get ElfMachineTemplate %s", templateName)
 	}
 
 	return elfMachineTemplate.GetLabels(), nil
