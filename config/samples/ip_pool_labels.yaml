@@ -1,0 +1,60 @@
+apiVersion: ipam.metal3.io/v1alpha1
+kind: IPPool
+metadata:
+  name: ip-pool-1
+  namespace: default
+  labels:
+    cluster.x-k8s.io/ip-pool-group: YOUR_IP_POOL_GROUP_NAME
+    cluster.x-k8s.io/network-name: YOUR_NETWORK_NAME
+spec:
+  pools:
+    - start: YOUR_INPUT_IP
+      end: YOUR_INPUT_IP
+      prefix: YOUR_MASK
+      gateway: YOUR_GATEWAY
+  prefix: YOUR_MASK
+  gateway: YOUR_GATEWAY
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: ElfMachineTemplate
+metadata:
+  name: elfk8s8-control-plane
+  namespace: default
+  labels:
+    cluster.x-k8s.io/ip-pool-group: YOUR_IP_POOL_GROUP_NAME
+    cluster.x-k8s.io/network-name: YOUR_NETWORK_NAME
+spec:
+  template:
+    spec:
+      cloneMode: FastClone
+      ha: true
+      numCPUS: 4
+      memoryMiB: 6144
+      diskGiB: 20
+      network:
+        devices:
+        - networkType: IPV4
+          vlan: YOUR_VLAN
+      template: YOUR_VM_TEMPLATE
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: ElfMachineTemplate
+metadata:
+  name: mycluster
+  namespace: default
+  labels:
+    cluster.x-k8s.io/ip-pool-group: YOUR_IP_POOL_GROUP_NAME
+    cluster.x-k8s.io/network-name: YOUR_NETWORK_NAME
+spec:
+  template:
+    spec:
+      cloneMode: FastClone
+      ha: true
+      numCPUS: 4
+      memoryMiB: 6144
+      diskGiB: 20
+      network:
+        devices:
+        - networkType: IPV4
+          vlan: YOUR_VLAN
+      template: YOUR_VM_TEMPLATE

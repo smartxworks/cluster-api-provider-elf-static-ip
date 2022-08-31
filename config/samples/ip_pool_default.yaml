@@ -1,0 +1,16 @@
+apiVersion: ipam.metal3.io/v1alpha1
+kind: IPPool
+metadata:
+  name: YOUR_IP_POOL_NAME
+  namespace: cape-system
+  labels:
+    ippool.cluster.x-k8s.io/is-default: "true"
+spec:
+  pools:
+    - start: YOUR_INPUT_IP
+      end: YOUR_INPUT_IP
+      prefix: YOUR_MASK
+      gateway: YOUR_GATEWAY
+  prefix: YOUR_MASK
+  gateway: YOUR_GATEWAY
+  namePrefix: ip-pool-default
