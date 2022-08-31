@@ -60,10 +60,10 @@ import (
 //+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipaddresses/status,verbs=get;update;patch
 
 const (
-	// MachineIPFinalizer allows ReconcileElfMachine to clean up static ip
+	// MachineStaticIPFinalizer allows ReconcileElfMachine to clean up static ip
 	// resources associated with ElfMachine before removing it from the
 	// API Server.
-	MachineIPFinalizer = "elfmachineip.infrastructure.cluster.x-k8s.io"
+	MachineStaticIPFinalizer = "elfmachinestaticip.infrastructure.cluster.x-k8s.io"
 )
 
 // ElfMachineReconciler reconciles a ElfMachine object.
@@ -179,12 +179,12 @@ func (r *ElfMachineReconciler) Reconcile(ctx goctx.Context, req ctrl.Request) (_
 }
 
 func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (reconcile.Result, error) {
-	ctx.Logger.Info("Reconciling ElfMachine IP delete")
-
 	if !ipamutil.HasStaticIPDevice(ctx.ElfMachine.Spec.Network.Devices) {
-		ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineIPFinalizer)
+		ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
 		return ctrl.Result{}, nil
 	}
+
+	ctx.Logger.V(1).Info("Reconciling ElfMachine IP delete")
 
 	ipPool, err := r.getIPPool(ctx)
 	if err != nil {
@@ -200,7 +200,7 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 			continue
 		}
 
-		if err := ctx.IPAMService.DeallocateIP(ctx, ipamutil.GetFormattedClaimName(ctx.ElfMachine.Name, i), ipPool); err != nil {
+		if err := ctx.IPAMService.ReleaseIP(ctx, ipamutil.GetFormattedClaimName(ctx.ElfMachine.Name, i), ipPool); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -208,15 +208,13 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 	if len(errs) > 0 {
 		return reconcile.Result{RequeueAfter: config.DefaultRequeue}, nil
 	} else {
-		ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineIPFinalizer)
+		ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
 	}
 
 	return reconcile.Result{}, nil
 }
 
 func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (reconcile.Result, error) {
-	ctx.Logger.Info("reconcile IP address")
-
 	devices := ctx.ElfMachine.Spec.Network.Devices
 	if len(devices) == 0 {
 		ctx.Logger.V(2).Info("no network device found")
@@ -224,12 +222,14 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 	}
 
 	if !ipamutil.NeedsAllocateIP(devices) {
-		ctx.Logger.V(3).Info("no need to allocate IP")
+		ctx.Logger.V(3).Info("no need to allocate static IP")
 		return ctrl.Result{}, nil
 	}
 
+	ctx.Logger.Info("reconcile IP address")
+
 	// If the ElfMachine doesn't have our finalizer, add it.
-	ctrlutil.AddFinalizer(ctx.ElfMachine, MachineIPFinalizer)
+	ctrlutil.AddFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
 
 	ipPool, err := r.getIPPool(ctx)
 	if err != nil {

@@ -88,7 +88,7 @@ func (m *Metal3IPAM) AllocateIP(ctx goctx.Context, ipName string, pool ipam.IPPo
 	return nil, nil
 }
 
-func (m *Metal3IPAM) DeallocateIP(ctx goctx.Context, ipName string, pool ipam.IPPool) error {
+func (m *Metal3IPAM) ReleaseIP(ctx goctx.Context, ipName string, pool ipam.IPPool) error {
 	ipClaim, err := m.getIPClaim(ctx, pool, ipName)
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func (m *Metal3IPAM) GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[s
 	// use default ip-pool
 	if len(matchLabels) == 0 {
 		namespace = ipam.DefaultIPPoolNamespace
-		matchLabels[ipam.DefaultIPPoolKey] = ""
+		matchLabels[ipam.DefaultIPPoolKey] = "true"
 	}
 
 	ipPoolList := &ipamv1.IPPoolList{}

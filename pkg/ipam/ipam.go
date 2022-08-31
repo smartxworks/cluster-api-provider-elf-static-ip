@@ -30,5 +30,5 @@ const (
 // Default IPPool.
 const (
 	DefaultIPPoolNamespace = "cape-system"
-	DefaultIPPoolKey       = "cluster.x-k8s.io/ip-pool-default"
+	DefaultIPPoolKey       = "ippool.cluster.x-k8s.io/is-default"
 )

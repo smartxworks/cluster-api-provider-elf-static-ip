@@ -151,7 +151,7 @@ metadata:
   name: ip-pool-1
   namespace: cape-system # 默认 IPPool 需要指定该命名空间
   labels:
-    cluster.x-k8s.io/ip-pool-default: "" # 默认 IPPool 需要指定该标签
+    ippool.cluster.x-k8s.io/is-default: "true" # 默认 IPPool 需要指定该标签
 spec:
   pools:
     - start: 10.255.160.10
@@ -160,6 +160,7 @@ spec:
       gateway: 10.255.0.1
   prefix: 16
   gateway: 10.255.0.1
+  namePrefix: ip-pool-default
 ```
 
 ## 开发

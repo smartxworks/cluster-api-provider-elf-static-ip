@@ -31,8 +31,8 @@ type IPAddressManager interface {
 	// source ip pool is fetched using optional poolSelector, default is using poolKey
 	AllocateIP(ctx goctx.Context, name string, pool IPPool, owner metav1.Object) (IPAddress, error)
 
-	// DeallocateIP releases static ip back to the ip pool
-	DeallocateIP(ctx goctx.Context, name string, pool IPPool) error
+	// ReleaseIP releases static ip back to the ip pool
+	ReleaseIP(ctx goctx.Context, name string, pool IPPool) error
 
 	// GetAvailableIPPool gets an available ip pool in the cluster namespace
 	GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[string]string, clusterMeta metav1.ObjectMeta) (IPPool, error)

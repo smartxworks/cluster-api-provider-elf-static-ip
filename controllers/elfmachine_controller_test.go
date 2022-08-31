@@ -133,10 +133,10 @@ var _ = Describe("ElfMachineReconciler", func() {
 		Expect(err).To(BeNil())
 		Expect(logBuffer.String()).To(ContainSubstring("no network device found"))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
-		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineIPFinalizer)).To(BeFalse())
+		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
 	})
 
-	It("should not reconcile when no need to allocate IP", func() {
+	It("should not reconcile when no need to allocate static IP", func() {
 		klog.SetOutput(logBuffer)
 		elfMachine.Spec.Network.Devices = []capev1.NetworkDeviceSpec{
 			{NetworkType: capev1.NetworkTypeIPV4, IPAddrs: []string{fake.IP()}},
@@ -150,9 +150,9 @@ var _ = Describe("ElfMachineReconciler", func() {
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
 		Expect(err).To(BeNil())
-		Expect(logBuffer.String()).To(ContainSubstring("no need to allocate IP"))
+		Expect(logBuffer.String()).To(ContainSubstring("no need to allocate static IP"))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
-		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineIPFinalizer)).To(BeFalse())
+		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
 	})
 
 	It("should not reconcile when no cloned-from-name annotation", func() {
@@ -167,7 +167,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		Expect(apierrors.IsNotFound(err)).To(BeTrue())
 		Expect(logBuffer.String()).To(ContainSubstring("failed to get IPPool match labels"))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
-		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineIPFinalizer)).To(BeTrue())
+		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 
 	It("should not reconcile when no IPPool", func() {
@@ -181,7 +181,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		Expect(err).To(BeNil())
 		Expect(logBuffer.String()).To(ContainSubstring("waiting for IPPool to be available"))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
-		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineIPFinalizer)).To(BeTrue())
+		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 
 	It("should create IPClaim and wait when no IPClaim", func() {
@@ -202,7 +202,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		}, &ipClaim)).To(Succeed())
 		Expect(ipClaim.Spec.Pool.Name).To(Equal(metal3IPPool.Name))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
-		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineIPFinalizer)).To(BeTrue())
+		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 
 	It("should wait for IP when IPClaim without IP", func() {
@@ -223,13 +223,13 @@ var _ = Describe("ElfMachineReconciler", func() {
 		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("IPClaim %s already exists, skipping creation", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
 		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("waiting for IP address %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
-		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineIPFinalizer)).To(BeTrue())
+		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 
 	It("should set IP for devices when IP ready", func() {
 		klog.SetOutput(logBuffer)
 		metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
-		metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: ""}
+		metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
 		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Name, 0))
 		setMetal3IPForClaim(metal3IPClaim, metal3IPAddress)
 		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
@@ -242,13 +242,13 @@ var _ = Describe("ElfMachineReconciler", func() {
 		Expect(logBuffer.String()).To(ContainSubstring("Set IP address successfully"))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(elfMachine.Spec.Network.Devices[0].IPAddrs).To(Equal([]string{string(metal3IPAddress.Spec.Address)}))
-		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineIPFinalizer)).To(BeTrue())
+		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 
 	Context("Delete a ElfMachine", func() {
 		BeforeEach(func() {
 			ctrlutil.AddFinalizer(elfMachine, capiv1.MachineFinalizer)
-			ctrlutil.AddFinalizer(elfMachine, MachineIPFinalizer)
+			ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
 			elfMachine.DeletionTimestamp = &metav1.Time{Time: time.Now().UTC()}
 		})
 
@@ -265,7 +265,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine))).To(BeTrue())
 		})
 
-		It("should remove MachineIPFinalizer without devices", func() {
+		It("should remove MachineStaticIPFinalizer without devices", func() {
 			elfMachine.Spec.Network.Devices = nil
 			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
 			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
@@ -275,12 +275,12 @@ var _ = Describe("ElfMachineReconciler", func() {
 			Expect(result).To(BeZero())
 			Expect(err).To(BeNil())
 			Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
-			Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineIPFinalizer)).To(BeFalse())
+			Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
 		})
 
-		It("should remove MachineIPFinalizer and delete related IPs", func() {
+		It("should remove MachineStaticIPFinalizer and delete related IPs", func() {
 			metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
-			metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: ""}
+			metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
 			metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Name, 0))
 			setMetal3IPForClaim(metal3IPClaim, metal3IPAddress)
 			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
@@ -291,7 +291,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			Expect(result).To(BeZero())
 			Expect(err).To(BeNil())
 			Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
-			Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineIPFinalizer)).To(BeFalse())
+			Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
 			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(metal3IPClaim), metal3IPClaim))).To(BeTrue())
 		})
 	})
