@@ -194,11 +194,11 @@ var _ = Describe("ElfMachineReconciler", func() {
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result.RequeueAfter).To(Equal(config.DefaultRequeue))
 		Expect(err).To(BeNil())
-		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("waiting for IP address %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
+		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("waiting for IP address %s to be available", ipamutil.GetDeviceClaimName(elfMachine.Name, 0))))
 		var ipClaim ipamv1.IPClaim
 		Expect(ctrlContext.Client.Get(ctrlContext, apitypes.NamespacedName{
 			Namespace: metal3IPPool.Namespace,
-			Name:      ipamutil.GetFormattedClaimName(elfMachine.Name, 0),
+			Name:      ipamutil.GetDeviceClaimName(elfMachine.Name, 0),
 		}, &ipClaim)).To(Succeed())
 		Expect(ipClaim.Spec.Pool.Name).To(Equal(metal3IPPool.Name))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
@@ -212,7 +212,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			ipam.ClusterNetworkNameKey: "ip-pool-vm-network",
 		}
 		elfMachineTemplate.Labels = metal3IPPool.Labels
-		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Name, 0))
+		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetDeviceClaimName(elfMachine.Name, 0))
 		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim)
 		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
 
@@ -220,8 +220,8 @@ var _ = Describe("ElfMachineReconciler", func() {
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result.RequeueAfter).To(Equal(config.DefaultRequeue))
 		Expect(err).To(BeNil())
-		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("IPClaim %s already exists, skipping creation", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
-		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("waiting for IP address %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
+		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("IPClaim %s already exists, skipping creation", ipamutil.GetDeviceClaimName(elfMachine.Name, 0))))
+		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("waiting for IP address %s to be available", ipamutil.GetDeviceClaimName(elfMachine.Name, 0))))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
@@ -230,7 +230,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		klog.SetOutput(logBuffer)
 		metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
 		metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
-		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Name, 0))
+		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetDeviceClaimName(elfMachine.Name, 0))
 		setMetal3IPForClaim(metal3IPClaim, metal3IPAddress)
 		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
 		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
@@ -281,7 +281,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		It("should remove MachineStaticIPFinalizer and delete related IPs", func() {
 			metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
 			metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
-			metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Name, 0))
+			metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetDeviceClaimName(elfMachine.Name, 0))
 			setMetal3IPForClaim(metal3IPClaim, metal3IPAddress)
 			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
 			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)

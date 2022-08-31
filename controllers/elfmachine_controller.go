@@ -200,7 +200,7 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 			continue
 		}
 
-		if err := ctx.IPAMService.ReleaseIP(ctx, ipamutil.GetFormattedClaimName(ctx.ElfMachine.Name, i), ipPool); err != nil {
+		if err := ctx.IPAMService.ReleaseIP(ctx, ipamutil.GetDeviceClaimName(ctx.ElfMachine.Name, i), ipPool); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -269,7 +269,7 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 }
 
 func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineContext, ipPool ipam.IPPool, index int) (reconcile.Result, error) {
-	ipName := ipamutil.GetFormattedClaimName(ctx.ElfMachine.Name, index)
+	ipName := ipamutil.GetDeviceClaimName(ctx.ElfMachine.Name, index)
 	ip, err := ctx.IPAMService.GetIP(ctx, ipName, ipPool)
 	if err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "failed to get allocated IP address %s", ipName)

@@ -15,6 +15,8 @@ Cluster API Provider ELF Static IP 通过集成的方式为 [Kubernetes Cluster 
 当 ElfMachine 的网络设备的 networkType 为 *IPV4* 且未设置 ipAddrs 的时候，CAPE 会等待 ipAddrs 被设置才会继续创建虚拟机的流程。
 Cluster API Provider ELF Static IP 的 controller 会 watch 所有的 ElfMachine，使用 ElfMachineTemplate 配置的 IPPool 给 ipAddrs 设置 IP。
 
+当 ElfCluster 未设置 ControlPlaneEndpoint.Host 的时候，CAPE 会等待 Host 被设置才会继续创建集群的流程。Cluster API Provider ELF Static IP 的 controller 会 watch 所有的 ElfCluster，使用 ElfCluster 配置的 IPPool 给 Host 设置 IP。
+
 ### 通过 IPPool 名使用
 
 ```yaml
@@ -26,17 +28,18 @@ metadata:
   labels:
 spec:
   pools:
-    - start: 10.255.160.10
-      end: 10.255.160.20
+    - start: 192.168.0.1
+      end: 192.168.0.128
       prefix: 16
-      gateway: 10.255.0.1
+      gateway: 192.168.0.0
   prefix: 16
-  gateway: 10.255.0.1
+  gateway: 192.168.0.0
 
+# 配置 ElfMachine
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: ElfMachineTemplate
 metadata:
-  name: elfk8s8-control-plane
+  name: mycluster-control-plane
   namespace: default
   labels:
     cluster.x-k8s.io/ip-pool-name: ip-pool-1
@@ -57,7 +60,7 @@ spec:
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: ElfMachineTemplate
 metadata:
-  name: elfk8s8-worker
+  name: mycluster-worker
   namespace: default
   labels:
     cluster.x-k8s.io/ip-pool-name: ip-pool-1
@@ -73,6 +76,19 @@ spec:
         - networkType: IPV4
           vlan: dd1f408f-7715-48c1-a817-13c3568f1d93_4cd00407-63ca-440b-80b7-ceacfccb8d08
       template: de6efbf8-fdae-4cad-9305-231c67d521a8
+
+# 配置 ElfCluster
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: ElfCluster
+metadata:
+  name: mycluster
+  namespace: default
+  labels:
+    cluster.x-k8s.io/ip-pool-name: ip-pool-1
+spec:
+  controlPlaneEndpoint:
+    host: ""
+    port: 6443
 ```
 
 ### 通过 IPPool 标签使用
@@ -88,18 +104,18 @@ metadata:
     cluster.x-k8s.io/network-name: vm-network
 spec:
   pools:
-    - start: 10.255.160.10
-      end: 10.255.160.20
+    - start: 192.168.0.1
+      end: 192.168.0.128
       prefix: 16
-      gateway: 10.255.0.1
+      gateway: 192.168.0.0
   prefix: 16
-  gateway: 10.255.0.1
+  gateway: 192.168.0.0
 
----
+# 配置 ElfMachine
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: ElfMachineTemplate
 metadata:
-  name: elfk8s8-control-plane
+  name: mycluster-control-plane
   namespace: default
   labels:
     cluster.x-k8s.io/ip-pool-group: ip-pool-group-1
@@ -121,7 +137,7 @@ spec:
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: ElfMachineTemplate
 metadata:
-  name: elfk8s8-worker
+  name: mycluster-worker
   namespace: default
   labels:
     cluster.x-k8s.io/ip-pool-group: ip-pool-group-1
@@ -138,6 +154,20 @@ spec:
         - networkType: IPV4
           vlan: dd1f408f-7715-48c1-a817-13c3568f1d93_4cd00407-63ca-440b-80b7-ceacfccb8d08
       template: de6efbf8-fdae-4cad-9305-231c67d521a8
+
+# 配置 ElfCluster
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: ElfCluster
+metadata:
+  name: mycluster
+  namespace: default
+  labels:
+    cluster.x-k8s.io/ip-pool-group: ip-pool-group-1
+    cluster.x-k8s.io/network-name: vm-network
+spec:
+  controlPlaneEndpoint:
+    host: ""
+    port: 6443
 ```
 
 ### 默认 IPPool
@@ -154,12 +184,12 @@ metadata:
     ippool.cluster.x-k8s.io/is-default: "true" # 默认 IPPool 需要指定该标签
 spec:
   pools:
-    - start: 10.255.160.10
-      end: 10.255.160.20
+    - start: 192.168.0.1
+      end: 192.168.0.128
       prefix: 16
-      gateway: 10.255.0.1
+      gateway: 192.168.0.0
   prefix: 16
-  gateway: 10.255.0.1
+  gateway: 192.168.0.0
   namePrefix: ip-pool-default
 ```
 

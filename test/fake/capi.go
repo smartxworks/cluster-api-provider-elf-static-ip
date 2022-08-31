@@ -44,6 +44,12 @@ func NewClusterAndMachineObjects() (*capev1.ElfCluster, *capiv1.Cluster, *capev1
 	return elfCluster, cluster, elfMachine, machine, template
 }
 
+func InitClusterOwnerReferences(
+	ctrlContext *context.ControllerContext,
+	elfCluster *capev1.ElfCluster, cluster *capiv1.Cluster) {
+	capefake.InitClusterOwnerReferences(ctrlContext, elfCluster, cluster)
+}
+
 func InitOwnerReferences(
 	ctrlContext *context.ControllerContext,
 	elfCluster *capev1.ElfCluster, cluster *capiv1.Cluster,

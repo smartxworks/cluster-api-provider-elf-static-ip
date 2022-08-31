@@ -14,12 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package context
 
-import "time"
+import (
+	capecontext "github.com/smartxworks/cluster-api-provider-elf/pkg/context"
 
-var (
-	// DefaultRequeue is the default time for how long to wait when
-	// requeueing a IPAM operation.
-	DefaultRequeue = 10 * time.Second
+	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam"
 )
+
+// ClusterContext is a Go context used with a ElfCluster.
+type ClusterContext struct {
+	*capecontext.ClusterContext
+	IPAMService ipam.IPAddressManager
+}

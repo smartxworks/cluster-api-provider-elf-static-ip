@@ -130,6 +130,10 @@ func main() {
 
 	// Create a function that adds all of the controllers and webhooks to the manager.
 	addToManager := func(ctx *context.ControllerManagerContext, mgr ctrlmgr.Manager) error {
+		if err := controllers.AddClusterControllerToManager(ctx, mgr); err != nil {
+			return err
+		}
+
 		if err := controllers.AddMachineControllerToManager(ctx, mgr); err != nil {
 			return err
 		}

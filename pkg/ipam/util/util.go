@@ -84,6 +84,10 @@ func GetObjRef(obj runtime.Object) corev1.ObjectReference {
 	}
 }
 
-func GetFormattedClaimName(ownerName string, deviceCount int) string {
+func GetControlPlaneEndpointClaimName(ownerName string) string {
+	return fmt.Sprintf("%s-controlplane-endpoint", ownerName)
+}
+
+func GetDeviceClaimName(ownerName string, deviceCount int) string {
 	return fmt.Sprintf("%s-%d", ownerName, deviceCount)
 }
