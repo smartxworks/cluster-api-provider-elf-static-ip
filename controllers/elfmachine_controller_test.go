@@ -205,7 +205,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 
-	It("should wait for IP when IPClaim without IP", func() {
+	It("should wait for IP when IPClaim does not get IP yet", func() {
 		klog.SetOutput(logBuffer)
 		metal3IPPool.Labels = map[string]string{
 			ipam.ClusterIPPoolGroupKey: "ip-pool-group",

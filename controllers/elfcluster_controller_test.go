@@ -155,7 +155,7 @@ var _ = Describe("ElfClusterReconciler", func() {
 			Expect(ctrlutil.ContainsFinalizer(elfCluster, ClusterStaticIPFinalizer)).To(BeFalse())
 		})
 
-		It("should wait for IP when IPClaim without IP", func() {
+		It("should wait for IP when IPClaim does not get IP yet", func() {
 			klog.SetOutput(logBuffer)
 			metal3IPPool.Labels = map[string]string{
 				ipam.ClusterIPPoolGroupKey: "ip-pool-group",
@@ -176,7 +176,7 @@ var _ = Describe("ElfClusterReconciler", func() {
 			Expect(ctrlutil.ContainsFinalizer(elfCluster, ClusterStaticIPFinalizer)).To(BeFalse())
 		})
 
-		It("should set IP when IP ready", func() {
+		It("should set IP when IPClaim gets IP", func() {
 			klog.SetOutput(logBuffer)
 			metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
 			metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
