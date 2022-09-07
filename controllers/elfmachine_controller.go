@@ -186,6 +186,11 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 
 	ctx.Logger.V(1).Info("Reconciling ElfMachine IP delete")
 
+	if ctrlutil.ContainsFinalizer(ctx.ElfMachine, capev1.MachineFinalizer) {
+		ctx.Logger.V(1).Info("Waiting for MachineFinalizer to be removed")
+		return ctrl.Result{}, nil
+	}
+
 	ipPool, err := r.getIPPool(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -217,16 +222,16 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (reconcile.Result, error) {
 	devices := ctx.ElfMachine.Spec.Network.Devices
 	if len(devices) == 0 {
-		ctx.Logger.V(2).Info("no network device found")
+		ctx.Logger.V(2).Info("No network device found")
 		return ctrl.Result{}, nil
 	}
 
 	if !ipamutil.NeedsAllocateIP(devices) {
-		ctx.Logger.V(3).Info("no need to allocate static IP")
+		ctx.Logger.V(3).Info("No need to allocate static IP")
 		return ctrl.Result{}, nil
 	}
 
-	ctx.Logger.Info("reconcile IP address")
+	ctx.Logger.Info("Reconcile IP address")
 
 	// If the ElfMachine doesn't have our finalizer, add it.
 	ctrlutil.AddFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
@@ -236,6 +241,7 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 		return ctrl.Result{}, err
 	}
 	if ipPool == nil {
+		ctx.Logger.Info("Waiting for IPPool to be available")
 		return ctrl.Result{}, nil
 	}
 
@@ -279,7 +285,7 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 			return ctrl.Result{}, errors.Wrapf(err, "failed to allocate IP address %s", ipName)
 		}
 
-		ctx.Logger.Info(fmt.Sprintf("waiting for IP address %s to be available", ipName))
+		ctx.Logger.Info(fmt.Sprintf("Waiting for IP address %s to be available", ipName))
 
 		return ctrl.Result{RequeueAfter: config.DefaultRequeue}, nil
 	}
@@ -288,7 +294,7 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 		return ctrl.Result{}, errors.Wrapf(err, "invalid IP address retrieved %s", ipName)
 	}
 
-	ctx.Logger.Info("static IP selected", "IPAddress", ip.GetName())
+	ctx.Logger.Info("Static IP selected", "IPAddress", ip.GetName())
 
 	device := &ctx.ElfMachine.Spec.Network.Devices[index]
 	device.IPAddrs = []string{ip.GetAddress()}
@@ -311,7 +317,6 @@ func (r *ElfMachineReconciler) getIPPool(ctx *context.MachineContext) (ipam.IPPo
 		return nil, err
 	}
 	if ipPool == nil {
-		ctx.Logger.Info("waiting for IPPool to be available")
 		return nil, nil
 	}
 
