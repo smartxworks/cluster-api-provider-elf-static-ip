@@ -285,7 +285,7 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 			return ctrl.Result{}, errors.Wrapf(err, "failed to allocate IP address %s", ipName)
 		}
 
-		ctx.Logger.Info(fmt.Sprintf("Waiting for IP address %s to be available", ipName))
+		ctx.Logger.Info(fmt.Sprintf("Waiting for IP address for %s to be available", ipName))
 
 		return ctrl.Result{RequeueAfter: config.DefaultRequeue}, nil
 	}
@@ -294,7 +294,7 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 		return ctrl.Result{}, errors.Wrapf(err, "invalid IP address retrieved %s", ipName)
 	}
 
-	ctx.Logger.Info("Static IP selected", "IPAddress", ip.GetName())
+	ctx.Logger.V(1).Info("Static IP selected", "IPAddress", ip.GetName())
 
 	device := &ctx.ElfMachine.Spec.Network.Devices[index]
 	device.IPAddrs = []string{ip.GetAddress()}

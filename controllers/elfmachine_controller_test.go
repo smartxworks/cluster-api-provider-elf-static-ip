@@ -185,7 +185,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result.RequeueAfter).To(Equal(config.DefaultRequeue))
 		Expect(err).To(BeNil())
-		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
+		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address for %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
 		var ipClaim ipamv1.IPClaim
 		Expect(ctrlContext.Client.Get(ctrlContext, apitypes.NamespacedName{
 			Namespace: metal3IPPool.Namespace,
@@ -211,7 +211,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		Expect(result.RequeueAfter).To(Equal(config.DefaultRequeue))
 		Expect(err).To(BeNil())
 		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("IPClaim %s already exists, skipping creation", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
-		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
+		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address for %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
