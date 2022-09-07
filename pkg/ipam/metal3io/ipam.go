@@ -52,7 +52,7 @@ func (m *Metal3IPAM) GetIP(ctx goctx.Context, ipName string, ipPool ipam.IPPool)
 	}
 
 	if ipClaim == nil || ipClaim.Status.Address == nil {
-		m.logger.Info(fmt.Sprintf("waiting for IPClaim %s", ipName))
+		m.logger.Info(fmt.Sprintf("Waiting for IPClaim %s", ipName))
 		return nil, nil
 	}
 
@@ -208,7 +208,7 @@ func (m *Metal3IPAM) createIPClaim(ctx goctx.Context, pool ipam.IPPool, claimNam
 		}
 	}
 
-	m.logger.Info(fmt.Sprintf("created IPClaim %s, waiting for IPAddress to be available", claimName))
+	m.logger.Info(fmt.Sprintf("Created IPClaim %s, waiting for IPAddress to be available", claimName))
 
 	return nil
 }
