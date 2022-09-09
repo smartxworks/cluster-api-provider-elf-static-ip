@@ -70,7 +70,7 @@ func (m *Metal3IP) GetAddress() string {
 
 func (m *Metal3IP) GetDNSServers() []string {
 	dnsServers := make([]string, 0, len(m.Spec.DNSServers))
-	for i := 0; i < len(dnsServers); i++ {
+	for i := 0; i < len(m.Spec.DNSServers); i++ {
 		dnsServers = append(dnsServers, string(m.Spec.DNSServers[i]))
 	}
 

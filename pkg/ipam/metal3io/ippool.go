@@ -76,7 +76,7 @@ func (m *Metal3IPPool) GetGateway() string {
 func (m *Metal3IPPool) GetDNSServers() []string {
 	dnsServers := make([]string, 0, len(m.IPPool.Spec.DNSServers))
 	for i := 0; i < len(m.IPPool.Spec.DNSServers); i++ {
-		dnsServers[i] = string(m.IPPool.Spec.DNSServers[i])
+		dnsServers = append(dnsServers, string(m.IPPool.Spec.DNSServers[i]))
 	}
 
 	return dnsServers
