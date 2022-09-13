@@ -234,6 +234,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		Expect(logBuffer.String()).To(ContainSubstring("Set IP address successfully"))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(elfMachine.Spec.Network.Devices[0].IPAddrs).To(Equal([]string{string(metal3IPAddress.Spec.Address)}))
+		// DNS server is unique and DNS server priority of ElfMachine is higher than IPPool.
 		Expect(elfMachine.Spec.Network.Nameservers).To(Equal([]string{"3.3.3.3", "2.2.2.2", "1.1.1.1"}))
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
