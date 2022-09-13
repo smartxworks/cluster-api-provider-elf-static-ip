@@ -28,7 +28,6 @@ import (
 	capecontext "github.com/smartxworks/cluster-api-provider-elf/pkg/context"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apitypes "k8s.io/apimachinery/pkg/types"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capiutil "sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
@@ -245,7 +244,12 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 		return ctrl.Result{}, nil
 	}
 
-	var errs []error
+	defer func() {
+		if len(ctx.ElfMachine.Spec.Network.Nameservers) > 0 {
+			ctx.ElfMachine.Spec.Network.Nameservers = ipamutil.LimitDNSServers(ctx.ElfMachine.Spec.Network.Nameservers)
+		}
+	}()
+
 	requeueAfter := time.Duration(0)
 	for i := 0; i < len(devices); i++ {
 		if !ipamutil.NeedsAllocateIPForDevice(devices[i]) {
@@ -254,19 +258,17 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 
 		result, err := r.reconcileDeviceIPAddress(ctx, ipPool, i)
 		if err != nil {
-			errs = append(errs, err)
+			ctx.Logger.Error(err, fmt.Sprintf("failed to set IP address for device %d", i))
+			return reconcile.Result{}, err
 		}
+
 		if result.RequeueAfter != 0 {
 			requeueAfter = result.RequeueAfter
 		}
 	}
 
-	if len(errs) > 0 {
-		if requeueAfter == time.Duration(0) {
-			requeueAfter = config.DefaultRequeue
-		}
-
-		return reconcile.Result{RequeueAfter: requeueAfter}, kerrors.NewAggregate(errs)
+	if requeueAfter == 0 && len(ipPool.GetDNSServers()) > 0 {
+		ctx.ElfMachine.Spec.Network.Nameservers = append(ctx.ElfMachine.Spec.Network.Nameservers, ipPool.GetDNSServers()...)
 	}
 
 	ctx.Logger.Info("Set IP address successfully")
@@ -300,6 +302,9 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 	device.IPAddrs = []string{ip.GetAddress()}
 	device.Netmask = ip.GetMask()
 	device.Routes = []capev1.NetworkDeviceRouteSpec{{Gateway: ip.GetGateway()}}
+	if len(ip.GetDNSServers()) > 0 {
+		ctx.ElfMachine.Spec.Network.Nameservers = append(ctx.ElfMachine.Spec.Network.Nameservers, ip.GetDNSServers()...)
+	}
 
 	return ctrl.Result{}, nil
 }
