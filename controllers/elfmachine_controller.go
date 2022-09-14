@@ -271,8 +271,6 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 		ctx.ElfMachine.Spec.Network.Nameservers = append(ctx.ElfMachine.Spec.Network.Nameservers, ipPool.GetDNSServers()...)
 	}
 
-	ctx.Logger.Info("Set IP address successfully")
-
 	return reconcile.Result{RequeueAfter: requeueAfter}, nil
 }
 

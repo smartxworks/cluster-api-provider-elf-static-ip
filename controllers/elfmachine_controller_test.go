@@ -177,6 +177,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 	})
 
 	It("should create IPClaim and wait when no IPClaim", func() {
+		elfMachineTemplate.Labels[ipam.ClusterIPPoolNamespaceKey] = metal3IPPool.Namespace
 		elfMachineTemplate.Labels[ipam.ClusterIPPoolNameKey] = metal3IPPool.Name
 		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool)
 		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
