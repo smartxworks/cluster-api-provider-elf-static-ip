@@ -195,6 +195,8 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 		return ctrl.Result{}, err
 	}
 	if ipPool == nil {
+		ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
+
 		return ctrl.Result{}, nil
 	}
 

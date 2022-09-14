@@ -232,7 +232,6 @@ var _ = Describe("ElfMachineReconciler", func() {
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
 		Expect(err).To(BeNil())
-		Expect(logBuffer.String()).To(ContainSubstring("Set IP address successfully"))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(elfMachine.Spec.Network.Devices[0].IPAddrs).To(Equal([]string{string(metal3IPAddress.Spec.Address)}))
 		// DNS server is unique and DNS server priority of ElfMachine is higher than IPPool.
@@ -258,6 +257,18 @@ var _ = Describe("ElfMachineReconciler", func() {
 			Expect(err).To(BeNil())
 			Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 			Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
+		})
+
+		It("should remove MachineStaticIPFinalizer without IPPool", func() {
+			ctrlutil.RemoveFinalizer(elfMachine, capev1.MachineFinalizer)
+			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+
+			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
+			Expect(result).To(BeZero())
+			Expect(err).To(BeNil())
+			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine))).To(BeTrue())
 		})
 
 		It("should not reconcile with MachineFinalizer", func() {
