@@ -40,6 +40,7 @@ metadata:
   namespace: default
   labels:
     cluster.x-k8s.io/ip-pool-name: ip-pool-1
+    cluster.x-k8s.io/ip-pool-namespace: default # optional, default to the namespace of ElfCluster
 spec:
   template:
     spec:
@@ -52,7 +53,7 @@ spec:
         devices:
         - networkType: IPV4
           vlan: dd1f408f-7715-48c1-a817-13c3568f1d93_4cd00407-63ca-440b-80b7-ceacfccb8d08
-      template: de6efbf8-fdae-4cad-9305-231c67d521a8
+      template: cl7hao0tseso80758osh921f1
 
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: ElfMachineTemplate
@@ -61,6 +62,7 @@ metadata:
   namespace: default
   labels:
     cluster.x-k8s.io/ip-pool-name: ip-pool-1
+    cluster.x-k8s.io/ip-pool-namespace: default # optional, default to the namespace of ElfCluster
 spec:
   template:
     spec:
@@ -72,7 +74,7 @@ spec:
         devices:
         - networkType: IPV4
           vlan: dd1f408f-7715-48c1-a817-13c3568f1d93_4cd00407-63ca-440b-80b7-ceacfccb8d08
-      template: de6efbf8-fdae-4cad-9305-231c67d521a8
+      template: cl7hao0tseso80758osh921f1
 ```
 
 ### 通过 IPPool 标签使用
@@ -104,6 +106,7 @@ metadata:
   labels:
     cluster.x-k8s.io/ip-pool-group: ip-pool-group-1
     cluster.x-k8s.io/network-name: vm-network
+    cluster.x-k8s.io/ip-pool-namespace: default # optional, default to the namespace of ElfCluster
 spec:
   template:
     spec:
@@ -116,7 +119,7 @@ spec:
         devices:
         - networkType: IPV4
           vlan: dd1f408f-7715-48c1-a817-13c3568f1d93_4cd00407-63ca-440b-80b7-ceacfccb8d08
-      template: de6efbf8-fdae-4cad-9305-231c67d521a8
+      template: cl7hao0tseso80758osh921f1
 
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: ElfMachineTemplate
@@ -126,6 +129,7 @@ metadata:
   labels:
     cluster.x-k8s.io/ip-pool-group: ip-pool-group-1
     cluster.x-k8s.io/network-name: vm-network
+    cluster.x-k8s.io/ip-pool-namespace: default # optional, default to the namespace of ElfCluster
 spec:
   template:
     spec:
@@ -137,7 +141,7 @@ spec:
         devices:
         - networkType: IPV4
           vlan: dd1f408f-7715-48c1-a817-13c3568f1d93_4cd00407-63ca-440b-80b7-ceacfccb8d08
-      template: de6efbf8-fdae-4cad-9305-231c67d521a8
+      template: cl7hao0tseso80758osh921f1
 ```
 
 ### 默认 IPPool

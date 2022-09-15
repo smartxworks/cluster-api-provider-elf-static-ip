@@ -107,24 +107,25 @@ func (m *Metal3IPAM) ReleaseIP(ctx goctx.Context, ipName string, pool ipam.IPPoo
 }
 
 func (m *Metal3IPAM) GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[string]string, clusterMeta metav1.ObjectMeta) (ipam.IPPool, error) {
+	poolNamespace := getIPPoolNamespace(poolMatchLabels, clusterMeta)
+
 	// if the specific ip-pool name is provided use that to get the ip-pool
 	var ipPool ipamv1.IPPool
-	if label, ok := poolMatchLabels[ipam.ClusterIPPoolNameKey]; ok && label != "" {
+	if poolName, ok := poolMatchLabels[ipam.ClusterIPPoolNameKey]; ok && poolName != "" {
 		if err := m.Get(ctx, apitypes.NamespacedName{
-			Namespace: clusterMeta.Namespace,
-			Name:      label,
+			Namespace: poolNamespace,
+			Name:      poolName,
 		}, &ipPool); err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, nil
 			}
 
-			return nil, errors.Wrapf(err, "failed to get IPPool %s", label)
+			return nil, errors.Wrapf(err, "failed to get IPPool %s/%s", poolNamespace, poolName)
 		}
 
 		return toIPPool(ipPool), nil
 	}
 
-	namespace := getIPPoolNamespace(clusterMeta)
 	matchLabels := map[string]string{}
 
 	// use labels 'ip-pool-group' & 'network-name' to select the ip-pool
@@ -137,7 +138,7 @@ func (m *Metal3IPAM) GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[s
 
 	// use default ip-pool
 	if len(matchLabels) == 0 {
-		namespace = ipam.DefaultIPPoolNamespace
+		poolNamespace = ipam.DefaultIPPoolNamespace
 		matchLabels[ipam.DefaultIPPoolKey] = "true"
 	}
 
@@ -145,7 +146,7 @@ func (m *Metal3IPAM) GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[s
 	if err := m.List(
 		ctx,
 		ipPoolList,
-		client.InNamespace(namespace),
+		client.InNamespace(poolNamespace),
 		client.MatchingLabels(matchLabels)); err != nil {
 		return nil, err
 	}
@@ -174,7 +175,7 @@ func (m *Metal3IPAM) getIPClaim(ctx goctx.Context, pool ipam.IPPool, claimName s
 }
 
 func (m *Metal3IPAM) createIPClaim(ctx goctx.Context, pool ipam.IPPool, claimName string, owner metav1.Object) error {
-	m.logger.Info(fmt.Sprintf("create IPClaim %s", claimName))
+	m.logger.Info(fmt.Sprintf("Creating IPClaim %s", claimName))
 
 	var ipPool ipamv1.IPPool
 	if err := m.Client.Get(ctx, apitypes.NamespacedName{
@@ -208,14 +209,14 @@ func (m *Metal3IPAM) createIPClaim(ctx goctx.Context, pool ipam.IPPool, claimNam
 		}
 	}
 
-	m.logger.Info(fmt.Sprintf("Created IPClaim %s, waiting for IPAddress to be available", claimName))
+	m.logger.V(2).Info(fmt.Sprintf("Created IPClaim %s. Waiting for IPAddress to be available", claimName))
 
 	return nil
 }
 
-func getIPPoolNamespace(meta metav1.ObjectMeta) string {
-	if poolNamespace, ok := meta.Annotations[ipam.ClusterIPPoolNamespaceKey]; ok && poolNamespace != "" {
-		return poolNamespace
+func getIPPoolNamespace(labels map[string]string, meta metav1.ObjectMeta) string {
+	if namespace, ok := labels[ipam.ClusterIPPoolNamespaceKey]; ok && namespace != "" {
+		return namespace
 	}
 
 	// default to cluster namespace

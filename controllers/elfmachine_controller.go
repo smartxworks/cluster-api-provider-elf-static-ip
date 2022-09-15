@@ -195,6 +195,8 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 		return ctrl.Result{}, err
 	}
 	if ipPool == nil {
+		ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
+
 		return ctrl.Result{}, nil
 	}
 
@@ -270,8 +272,6 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 	if requeueAfter == 0 && len(ipPool.GetDNSServers()) > 0 {
 		ctx.ElfMachine.Spec.Network.Nameservers = append(ctx.ElfMachine.Spec.Network.Nameservers, ipPool.GetDNSServers()...)
 	}
-
-	ctx.Logger.Info("Set IP address successfully")
 
 	return reconcile.Result{RequeueAfter: requeueAfter}, nil
 }
