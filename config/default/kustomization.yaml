@@ -12,6 +12,9 @@ namePrefix: cape-ip-
 #commonLabels:
 #  someName: someValue
 
+resources:
+- namespace.yaml
+
 bases:
 - ../crd
 - ../rbac
