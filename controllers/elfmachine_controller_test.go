@@ -186,11 +186,11 @@ var _ = Describe("ElfMachineReconciler", func() {
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result.RequeueAfter).To(Equal(config.DefaultRequeue))
 		Expect(err).To(BeNil())
-		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address for %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
+		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address for %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))))
 		var ipClaim ipamv1.IPClaim
 		Expect(ctrlContext.Client.Get(ctrlContext, apitypes.NamespacedName{
 			Namespace: metal3IPPool.Namespace,
-			Name:      ipamutil.GetFormattedClaimName(elfMachine.Name, 0),
+			Name:      ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0),
 		}, &ipClaim)).To(Succeed())
 		Expect(ipClaim.Spec.Pool.Name).To(Equal(metal3IPPool.Name))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
@@ -203,7 +203,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			ipam.ClusterNetworkNameKey: "ip-pool-vm-network",
 		}
 		elfMachineTemplate.Labels = metal3IPPool.Labels
-		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Name, 0))
+		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))
 		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim)
 		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
 
@@ -211,8 +211,8 @@ var _ = Describe("ElfMachineReconciler", func() {
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result.RequeueAfter).To(Equal(config.DefaultRequeue))
 		Expect(err).To(BeNil())
-		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("IPClaim %s already exists, skipping creation", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
-		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address for %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Name, 0))))
+		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("IPClaim %s already exists, skipping creation", ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))))
+		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address for %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
@@ -221,7 +221,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
 		metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
 		metal3IPPool.Spec.DNSServers = append(metal3IPPool.Spec.DNSServers, ipamv1.IPAddressStr("1.1.1.1"), ipamv1.IPAddressStr("4.4.4.4"))
-		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Name, 0))
+		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))
 		metal3IPAddress.Spec.DNSServers = append(metal3IPAddress.Spec.DNSServers, ipamv1.IPAddressStr("2.2.2.2"), ipamv1.IPAddressStr("3.3.3.3"))
 		setMetal3IPForClaim(metal3IPClaim, metal3IPAddress)
 		elfMachine.Spec.Network.Nameservers = []string{"3.3.3.3"}
@@ -246,8 +246,8 @@ var _ = Describe("ElfMachineReconciler", func() {
 			elfMachine.DeletionTimestamp = &metav1.Time{Time: time.Now().UTC()}
 		})
 
-		It("should remove MachineStaticIPFinalizer without devices", func() {
-			elfMachine.Spec.Network.Devices = nil
+		It("should remove MachineStaticIPFinalizer without IPV4 devices", func() {
+			elfMachine.Spec.Network.Devices = []capev1.NetworkDeviceSpec{{NetworkType: capev1.NetworkTypeIPV4DHCP}}
 			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
 			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
 
@@ -288,8 +288,9 @@ var _ = Describe("ElfMachineReconciler", func() {
 			ctrlutil.RemoveFinalizer(elfMachine, capev1.MachineFinalizer)
 			metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
 			metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
-			metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Name, 0))
+			metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))
 			setMetal3IPForClaim(metal3IPClaim, metal3IPAddress)
+			metal3IPClaim.Labels = map[string]string{ipam.IPOwnerNameKey: fmt.Sprintf("%s-%s", elfMachine.GetNamespace(), elfMachine.GetName())}
 			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
 			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
 
