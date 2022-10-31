@@ -106,6 +106,25 @@ func (m *Metal3IPAM) ReleaseIP(ctx goctx.Context, ipName string, pool ipam.IPPoo
 	return nil
 }
 
+func (m *Metal3IPAM) ReleaseIPs(ctx goctx.Context, owner metav1.Object, pool ipam.IPPool) (int, error) {
+	ipClaimList := &ipamv1.IPClaimList{}
+	labels := map[string]string{ipam.IPOwnerNameKey: fmt.Sprintf("%s-%s", owner.GetNamespace(), owner.GetName())}
+
+	if err := m.Client.List(ctx, ipClaimList, client.InNamespace(pool.GetNamespace()), client.MatchingLabels(labels)); err != nil {
+		return 0, err
+	}
+
+	for i := 0; i < len(ipClaimList.Items); i++ {
+		if err := m.Client.Delete(ctx, &ipClaimList.Items[i]); err != nil {
+			return 0, errors.Wrapf(err, "failed to delete IPClaim %s", ipClaimList.Items[i].Name)
+		}
+
+		m.logger.Info(fmt.Sprintf("IPClaim %s already deleted", ipClaimList.Items[i].Name))
+	}
+
+	return len(ipClaimList.Items), nil
+}
+
 func (m *Metal3IPAM) GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[string]string, clusterMeta metav1.ObjectMeta) (ipam.IPPool, error) {
 	poolNamespace := getIPPoolNamespace(poolMatchLabels, clusterMeta)
 
@@ -200,7 +219,7 @@ func (m *Metal3IPAM) createIPClaim(ctx goctx.Context, pool ipam.IPPool, claimNam
 	}
 
 	if owner != nil {
-		ipClaim.Labels = map[string]string{ipam.IPOwnerNameKey: owner.GetName()}
+		ipClaim.Labels = map[string]string{ipam.IPOwnerNameKey: fmt.Sprintf("%s-%s", owner.GetNamespace(), owner.GetName())}
 	}
 
 	if err := m.Client.Create(ctx, ipClaim); err != nil {

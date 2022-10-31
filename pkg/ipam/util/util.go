@@ -125,6 +125,6 @@ func GetObjRef(obj runtime.Object) corev1.ObjectReference {
 	}
 }
 
-func GetFormattedClaimName(ownerName string, deviceCount int) string {
-	return fmt.Sprintf("%s-%d", ownerName, deviceCount)
+func GetFormattedClaimName(ownerNamespace, ownerName string, deviceCount int) string {
+	return fmt.Sprintf("%s-%s-%d", ownerNamespace, ownerName, deviceCount)
 }
