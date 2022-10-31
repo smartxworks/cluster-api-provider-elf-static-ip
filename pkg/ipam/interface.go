@@ -34,7 +34,7 @@ type IPAddressManager interface {
 	// ReleaseIP releases static ip back to the ip pool
 	ReleaseIP(ctx goctx.Context, name string, pool IPPool) error
 
-	// ReleaseIPs releases static ips back to the ip pool
+	// ReleaseIPs releases all allocated static ips back to the ip pool
 	ReleaseIPs(ctx goctx.Context, owner metav1.Object, pool IPPool) (int, error)
 
 	// GetAvailableIPPool gets an available ip pool in the cluster namespace

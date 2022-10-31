@@ -208,7 +208,7 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 	}
 
 	if deletedCount > 0 {
-		ctx.Logger.Info("Release IPs successfully")
+		ctx.Logger.Info(fmt.Sprintf("Released %d IPs successfully", deletedCount))
 	}
 
 	ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
