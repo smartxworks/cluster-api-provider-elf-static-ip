@@ -98,7 +98,10 @@ func (m *Metal3IPAM) ReleaseIP(ctx goctx.Context, ipName string, pool ipam.IPPoo
 	}
 
 	if err := m.Client.Delete(ctx, ipClaim); err != nil {
-		return errors.Wrapf(err, "failed to delete IPClaim %s", ipName)
+		message := fmt.Sprintf("failed to delete IPClaim %s", ipName)
+		m.logger.Error(err, message)
+
+		return errors.Wrapf(err, message)
 	}
 
 	m.logger.Info(fmt.Sprintf("IPClaim %s already deleted", ipName))

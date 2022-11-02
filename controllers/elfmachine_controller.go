@@ -200,15 +200,19 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 		return ctrl.Result{}, nil
 	}
 
-	deletedCount, err := ctx.IPAMService.ReleaseIPs(ctx, ctx.ElfMachine, ipPool)
-	if err != nil {
-		ctx.Logger.Error(err, "failed to release IPs")
+	var errs []error
+	for i := 0; i < len(ctx.ElfMachine.Spec.Network.Devices); i++ {
+		if !ipamutil.IsStaticIPDevice(ctx.ElfMachine.Spec.Network.Devices[i]) {
+			continue
+		}
 
-		return reconcile.Result{RequeueAfter: config.DefaultRequeue}, nil
+		if err := ctx.IPAMService.ReleaseIP(ctx, ipamutil.GetFormattedClaimName(ctx.ElfMachine.Namespace, ctx.ElfMachine.Name, i), ipPool); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
-	if deletedCount > 0 {
-		ctx.Logger.Info(fmt.Sprintf("Released %d IPs successfully", deletedCount))
+	if len(errs) > 0 {
+		return reconcile.Result{RequeueAfter: config.DefaultRequeue}, nil
 	}
 
 	ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
