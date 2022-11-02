@@ -3,7 +3,7 @@ module github.com/smartxworks/cluster-api-provider-elf-static-ip
 go 1.18
 
 require (
-	github.com/metal3-io/ip-address-manager v1.1.3
+	github.com/metal3-io/ip-address-manager v1.2.0
 	github.com/metal3-io/ip-address-manager/api v0.0.0
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2
@@ -99,7 +99,7 @@ require (
 )
 
 replace (
-	github.com/metal3-io/ip-address-manager/api => github.com/metal3-io/ip-address-manager/api v0.0.0-20221019122537-0c8351bb5d43
+	github.com/metal3-io/ip-address-manager/api => github.com/metal3-io/ip-address-manager/api v0.0.0-20220919121103-31c03f129143
 	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.16.5
 	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.2.4
 )

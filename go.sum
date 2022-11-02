@@ -415,10 +415,10 @@ github.com/mattn/go-isatty v0.0.3/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNx
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
 github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 h1:I0XW9+e1XWDxdcEniV4rQAIOPUGDq67JSCiRCgGCZLI=
 github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369/go.mod h1:BSXmuO+STAnVfrANrmjBb36TMTDstsz7MSK+HVaYKv4=
-github.com/metal3-io/ip-address-manager v1.1.3 h1:k4WVGroMZRGZkVLi26El4HN7ck96OZ/NkFhsynVutLc=
-github.com/metal3-io/ip-address-manager v1.1.3/go.mod h1:IBzD8HPxq61Naz6IplCB0rJdorNiKpUjBXosgnf3gxo=
-github.com/metal3-io/ip-address-manager/api v0.0.0-20221019122537-0c8351bb5d43 h1:tBeqEVPoCz2jnVEfPz7gsdUZUrhNP5bQ41HRPVmp35k=
-github.com/metal3-io/ip-address-manager/api v0.0.0-20221019122537-0c8351bb5d43/go.mod h1:wJKz1GshtIXLdcgNi2N/bTboHrA0NN542dL1cglJy7s=
+github.com/metal3-io/ip-address-manager v1.2.0 h1:TcOiU3zxmKym5H23SH4BAO2SsSr9SLZdcQeX6g2TNfs=
+github.com/metal3-io/ip-address-manager v1.2.0/go.mod h1:QUZ0px2/NYkLyfsgL69znam61pYU1WF6K3kt8vdAYJE=
+github.com/metal3-io/ip-address-manager/api v0.0.0-20220919121103-31c03f129143 h1:/YjWM26KaLP7MRvM5ohvzRETIgTf56uDerfJJlLviz0=
+github.com/metal3-io/ip-address-manager/api v0.0.0-20220919121103-31c03f129143/go.mod h1:vXQGPBzfdZxVYTPDvVAnTgwW+uJ2Cr0tKq0nraNouv4=
 github.com/miekg/dns v1.0.14/go.mod h1:W1PPwlIAgtquWBMBEV9nkV9Cazfe8ScdGz/Lj7v3Nrg=
 github.com/mitchellh/cli v1.0.0/go.mod h1:hNIlj7HEI86fIcpObd7a0FcrxTWetlwJDGcceTlRvqc=
 github.com/mitchellh/copystructure v1.2.0 h1:vpKXTN4ewci03Vljg/q9QvCGUDttBOGBIa15WveJJGw=
