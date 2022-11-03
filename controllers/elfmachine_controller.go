@@ -283,7 +283,7 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 		return ctrl.Result{}, errors.Wrapf(err, "failed to get allocated IP address %s", ipName)
 	}
 	if ip == nil {
-		if _, err := ctx.IPAMService.AllocateIP(ctx, ipName, ipPool, ctx.ElfMachine); err != nil {
+		if _, err := ctx.IPAMService.AllocateIP(ctx, ipName, ipPool, nil); err != nil {
 			return ctrl.Result{}, errors.Wrapf(err, "failed to allocate IP address %s", ipName)
 		}
 
