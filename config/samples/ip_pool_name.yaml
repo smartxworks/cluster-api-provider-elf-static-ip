@@ -9,8 +9,12 @@ spec:
       end: YOUR_INPUT_IP
       prefix: YOUR_MASK
       gateway: YOUR_GATEWAY
+      # optional
+      dnsServers: []
   prefix: YOUR_MASK
   gateway: YOUR_GATEWAY
+  # optional
+  dnsServers: []
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: ElfMachineTemplate
