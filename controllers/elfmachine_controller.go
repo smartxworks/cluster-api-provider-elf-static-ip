@@ -106,12 +106,6 @@ func (r *ElfMachineReconciler) Reconcile(ctx goctx.Context, req ctrl.Request) (_
 		return reconcile.Result{}, err
 	}
 
-	// If the ElfMachine is in an error state, return early.
-	if elfMachine.IsFailed() {
-		r.Logger.V(2).Info("Error state detected, skipping reconciliation", "namespace", elfMachine.Namespace, "elfMachine", elfMachine.Name)
-		return reconcile.Result{}, nil
-	}
-
 	// Fetch the CAPI Machine.
 	machine, err := capiutil.GetOwnerMachine(r, r.Client, elfMachine.ObjectMeta)
 	if err != nil {
@@ -221,6 +215,12 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 }
 
 func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (reconcile.Result, error) {
+	// If the ElfMachine is in an error state, return early.
+	if ctx.ElfMachine.IsFailed() {
+		r.Logger.V(2).Info("Error state detected, skipping reconciliation")
+		return reconcile.Result{}, nil
+	}
+
 	devices := ctx.ElfMachine.Spec.Network.Devices
 	if len(devices) == 0 {
 		ctx.Logger.V(2).Info("No network device found")
