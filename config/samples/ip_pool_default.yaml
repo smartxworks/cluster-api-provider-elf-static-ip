@@ -11,6 +11,10 @@ spec:
       end: YOUR_INPUT_IP
       prefix: YOUR_MASK
       gateway: YOUR_GATEWAY
+      # optional
+      dnsServers: []
   prefix: YOUR_MASK
   gateway: YOUR_GATEWAY
+  # optional
+  dnsServers: []
   namePrefix: ip-pool-default
