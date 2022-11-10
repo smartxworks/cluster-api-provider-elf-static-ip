@@ -3,7 +3,7 @@ module github.com/smartxworks/cluster-api-provider-elf-static-ip
 go 1.18
 
 require (
-	github.com/metal3-io/ip-address-manager v1.2.0
+	github.com/metal3-io/ip-address-manager v1.2.1
 	github.com/metal3-io/ip-address-manager/api v0.0.0
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2
@@ -16,13 +16,13 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.2
 	github.com/pkg/errors v0.9.1
-	github.com/smartxworks/cluster-api-provider-elf v0.4.0
+	github.com/smartxworks/cluster-api-provider-elf v0.4.1
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
 	k8s.io/apiextensions-apiserver v0.24.2
 	k8s.io/apiserver v0.24.2
 	k8s.io/klog/v2 v2.60.1
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
-	sigs.k8s.io/cluster-api v1.2.4
+	sigs.k8s.io/cluster-api v1.2.5
 )
 
 require (
@@ -34,7 +34,7 @@ require (
 	github.com/coredns/corefile-migration v1.0.17 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/emicklei/go-restful v2.15.0+incompatible // indirect
+	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
@@ -76,7 +76,7 @@ require (
 	github.com/smartxworks/cloudtower-go-sdk/v2 v2.3.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.mongodb.org/mongo-driver v1.10.1 // indirect
-	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b // indirect
+	golang.org/x/net v0.0.0-20220906165146-f3363e06e74c // indirect
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2 // indirect
 	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
@@ -99,7 +99,7 @@ require (
 )
 
 replace (
-	github.com/metal3-io/ip-address-manager/api => github.com/metal3-io/ip-address-manager/api v0.0.0-20220919121103-31c03f129143
+	github.com/metal3-io/ip-address-manager/api => github.com/metal3-io/ip-address-manager/api v0.0.0-20221109074200-4f826644ac3f
 	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.16.5
-	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.2.4
+	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.2.5
 )
