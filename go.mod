@@ -16,13 +16,13 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.2
 	github.com/pkg/errors v0.9.1
-	github.com/smartxworks/cluster-api-provider-elf v0.4.1
+	github.com/smartxworks/cluster-api-provider-elf v0.4.5
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
 	k8s.io/apiextensions-apiserver v0.24.2
 	k8s.io/apiserver v0.24.2
 	k8s.io/klog/v2 v2.60.1
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
-	sigs.k8s.io/cluster-api v1.2.5
+	sigs.k8s.io/cluster-api v1.2.6
 )
 
 require (
@@ -98,8 +98,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace (
-	github.com/metal3-io/ip-address-manager/api => github.com/metal3-io/ip-address-manager/api v0.0.0-20221109074200-4f826644ac3f
-	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.16.5
-	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.2.5
-)
+replace github.com/metal3-io/ip-address-manager/api => github.com/metal3-io/ip-address-manager/api v0.0.0-20221109074200-4f826644ac3f
