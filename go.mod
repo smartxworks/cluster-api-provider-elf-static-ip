@@ -16,7 +16,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.2
 	github.com/pkg/errors v0.9.1
-	github.com/smartxworks/cluster-api-provider-elf v0.4.6
+	github.com/smartxworks/cluster-api-provider-elf v0.4.8
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
 	k8s.io/apiextensions-apiserver v0.24.2
 	k8s.io/apiserver v0.24.2
