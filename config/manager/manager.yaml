@@ -5,15 +5,18 @@ metadata:
   namespace: system
   labels:
     control-plane: controller-manager
+    cluster.x-k8s.io/provider: infrastructure-cape-static-ip
 spec:
   selector:
     matchLabels:
       control-plane: controller-manager
+      cluster.x-k8s.io/provider: infrastructure-cape-static-ip
   replicas: 1
   template:
     metadata:
       labels:
         control-plane: controller-manager
+        cluster.x-k8s.io/provider: infrastructure-cape-static-ip
     spec:
       containers:
       - args:
