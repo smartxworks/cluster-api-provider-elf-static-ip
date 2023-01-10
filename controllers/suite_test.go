@@ -22,11 +22,10 @@ import (
 	"testing"
 
 	ipamv1 "github.com/metal3-io/ip-address-manager/api/v1alpha1"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	capecontext "github.com/smartxworks/cluster-api-provider-elf/pkg/context"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	ipamutil "github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam/util"
@@ -36,9 +35,7 @@ import (
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+	RunSpecs(t, "Controller Suite")
 }
 
 var (

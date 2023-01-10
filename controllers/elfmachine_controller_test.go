@@ -24,7 +24,7 @@ import (
 	"time"
 
 	ipamv1 "github.com/metal3-io/ip-address-manager/api/v1alpha1"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	capev1 "github.com/smartxworks/cluster-api-provider-elf/api/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
