@@ -228,7 +228,7 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 	}
 
 	if !ipamutil.NeedsAllocateIP(devices) {
-		ctx.Logger.V(3).Info("No need to allocate static IP")
+		ctx.Logger.V(6).Info("No need to allocate static IP")
 		return ctrl.Result{}, nil
 	}
 
