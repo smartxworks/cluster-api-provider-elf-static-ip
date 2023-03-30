@@ -79,19 +79,19 @@ var _ = Describe("ElfMachineReconciler", func() {
 		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring("ElfMachine not found, won't reconcile"))
 	})
 
 	It("should not reconcile when ElfMachine in an error state", func() {
-		elfMachine.Status.FailureMessage = pointer.StringPtr("some error")
+		elfMachine.Status.FailureMessage = pointer.String("some error")
 		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
 		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
 
 		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring("Error state detected, skipping reconciliation"))
 	})
 
@@ -101,7 +101,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring("Waiting for Machine Controller to set OwnerRef on ElfMachine"))
 	})
 
@@ -113,7 +113,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring("ElfMachine linked to a cluster that is paused"))
 	})
 
@@ -125,7 +125,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring("No network device found"))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
@@ -143,7 +143,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring("No need to allocate static IP"))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
@@ -170,7 +170,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring("Waiting for IPPool to be available"))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
@@ -185,7 +185,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result.RequeueAfter).To(Equal(config.DefaultRequeue))
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address for %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))))
 		var ipClaim ipamv1.IPClaim
 		Expect(ctrlContext.Client.Get(ctrlContext, apitypes.NamespacedName{
@@ -210,7 +210,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result.RequeueAfter).To(Equal(config.DefaultRequeue))
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("IPClaim %s already exists, skipping creation", ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))))
 		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address for %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))))
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
@@ -231,7 +231,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(elfMachine.Spec.Network.Devices[0].IPAddrs).To(Equal([]string{string(metal3IPAddress.Spec.Address)}))
 		// DNS server is unique and DNS server priority of ElfMachine is higher than IPPool.
@@ -254,7 +254,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 			Expect(result).To(BeZero())
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 			Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
 		})
@@ -267,7 +267,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 			Expect(result).To(BeZero())
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine))).To(BeTrue())
 		})
 
@@ -278,7 +278,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 			Expect(result).To(BeZero())
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(logBuffer.String()).To(ContainSubstring("Waiting for MachineFinalizer to be removed"))
 			Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 			Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
@@ -297,7 +297,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 			Expect(result).To(BeZero())
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine))).To(BeTrue())
 			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(metal3IPClaim), metal3IPClaim))).To(BeTrue())
 		})

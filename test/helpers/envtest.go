@@ -27,7 +27,6 @@ import (
 	goruntime "runtime"
 
 	ipamv1 "github.com/metal3-io/ip-address-manager/api/v1alpha1"
-	_ "github.com/metal3-io/ip-address-manager/controllers"
 	"github.com/onsi/ginkgo/v2"
 	capev1 "github.com/smartxworks/cluster-api-provider-elf/api/v1beta1"
 	"github.com/smartxworks/cluster-api-provider-elf/pkg/context"
