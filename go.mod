@@ -13,15 +13,15 @@ require (
 require (
 	github.com/go-logr/logr v1.2.3
 	github.com/onsi/ginkgo/v2 v2.9.2
-	github.com/onsi/gomega v1.27.4
+	github.com/onsi/gomega v1.27.6
 	github.com/pkg/errors v0.9.1
-	github.com/smartxworks/cluster-api-provider-elf v1.2.0
+	github.com/smartxworks/cluster-api-provider-elf v1.2.1
 	golang.org/x/mod v0.9.0
 	k8s.io/apiextensions-apiserver v0.26.1
 	k8s.io/apiserver v0.26.1
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
-	sigs.k8s.io/cluster-api v1.4.0
+	sigs.k8s.io/cluster-api v1.4.1
 )
 
 require (
