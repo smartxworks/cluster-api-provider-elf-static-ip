@@ -118,6 +118,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 	})
 
 	It("should not reconcile without devices", func() {
+		ctrlutil.RemoveFinalizer(elfMachine, MachineStaticIPFinalizer)
 		elfMachine.Spec.Network.Devices = []capev1.NetworkDeviceSpec{}
 		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
 		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
@@ -149,7 +150,20 @@ var _ = Describe("ElfMachineReconciler", func() {
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
 	})
 
+	It("should set MachineStaticIPFinalizer first", func() {
+		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+
+		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
+		Expect(result).NotTo(BeZero())
+		Expect(err).NotTo(HaveOccurred())
+		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
+	})
+
 	It("should not reconcile when no cloned-from-name annotation", func() {
+		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
 		elfMachine.Annotations[capiv1.TemplateClonedFromNameAnnotation] = ""
 		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
 		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
@@ -164,6 +178,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 	})
 
 	It("should not reconcile when no IPPool", func() {
+		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
 		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
 		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
 
@@ -177,6 +192,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 	})
 
 	It("should create IPClaim and wait when no IPClaim", func() {
+		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
 		elfMachineTemplate.Labels[ipam.ClusterIPPoolNamespaceKey] = metal3IPPool.Namespace
 		elfMachineTemplate.Labels[ipam.ClusterIPPoolNameKey] = metal3IPPool.Name
 		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool)
@@ -198,6 +214,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 	})
 
 	It("should wait for IP when IPClaim without IP", func() {
+		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
 		metal3IPPool.Labels = map[string]string{
 			ipam.ClusterIPPoolGroupKey: "ip-pool-group",
 			ipam.ClusterNetworkNameKey: "ip-pool-vm-network",
@@ -218,6 +235,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 	})
 
 	It("should set IP for devices when IP ready", func() {
+		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
 		metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
 		metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
 		metal3IPPool.Spec.DNSServers = append(metal3IPPool.Spec.DNSServers, ipamv1.IPAddressStr("1.1.1.1"), ipamv1.IPAddressStr("4.4.4.4"))
@@ -247,6 +265,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 		})
 
 		It("should remove MachineStaticIPFinalizer without IPV4 devices", func() {
+			ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
 			elfMachine.Spec.Network.Devices = []capev1.NetworkDeviceSpec{{NetworkType: capev1.NetworkTypeIPV4DHCP}}
 			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
 			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
@@ -255,6 +274,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 			Expect(result).To(BeZero())
 			Expect(err).ToNot(HaveOccurred())
+			Expect(logBuffer.String()).To(ContainSubstring("No static IP network device found, but MachineStaticIPFinalizer is set and remove it"))
 			Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 			Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
 		})
@@ -268,6 +288,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 			Expect(result).To(BeZero())
 			Expect(err).ToNot(HaveOccurred())
+			Expect(logBuffer.String()).To(ContainSubstring("IPPool is not found, remove MachineStaticIPFinalizer"))
 			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine))).To(BeTrue())
 		})
 
