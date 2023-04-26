@@ -173,11 +173,16 @@ func (r *ElfMachineReconciler) Reconcile(ctx goctx.Context, req ctrl.Request) (_
 
 func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (reconcile.Result, error) {
 	if !ipamutil.HasStaticIPDevice(ctx.ElfMachine.Spec.Network.Devices) {
-		ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
+		if ctrlutil.ContainsFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer) {
+			ctx.Logger.V(1).Info("No static IP network device found, but MachineStaticIPFinalizer is set and remove it")
+
+			ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
+		}
+
 		return ctrl.Result{}, nil
 	}
 
-	ctx.Logger.V(1).Info("Reconciling ElfMachine IP delete")
+	ctx.Logger.V(1).Info("Reconciling ElfMachine IP delete", "finalizers", ctx.ElfMachine.Finalizers)
 
 	if ctrlutil.ContainsFinalizer(ctx.ElfMachine, capev1.MachineFinalizer) {
 		ctx.Logger.V(1).Info("Waiting for MachineFinalizer to be removed")
@@ -190,6 +195,8 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 	}
 	if ipPool == nil {
 		ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
+
+		r.Logger.V(1).Info("IPPool is not found, remove MachineStaticIPFinalizer")
 
 		return ctrl.Result{}, nil
 	}
@@ -210,6 +217,7 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 	}
 
 	ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
+	r.Logger.V(1).Info("The IPs used by Machine has been released, remove MachineStaticIPFinalizer")
 
 	return reconcile.Result{}, nil
 }
@@ -234,8 +242,17 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 
 	ctx.Logger.Info("Reconcile IP address")
 
-	// If the ElfMachine doesn't have our finalizer, add it.
-	ctrlutil.AddFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
+	// Save MachineStaticIPFinalizer first and then allocate IP.
+	// If the IP has been allocated but the MachineStaticIPFinalizer has not been saved,
+	// deleting the Machine at this time may not release the IP.
+	//
+	// If the ElfMachine doesn't have MachineStaticIPFinalizer, add it and return with requeue.
+	// In next reconcile, the static IP will be allocated.
+	if !ctrlutil.ContainsFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer) {
+		ctrlutil.AddFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
+
+		return ctrl.Result{RequeueAfter: 3 * time.Second}, nil
+	}
 
 	ipPool, err := r.getIPPool(ctx)
 	if err != nil {
@@ -322,6 +339,7 @@ func (r *ElfMachineReconciler) getIPPool(ctx *context.MachineContext) (ipam.IPPo
 		return nil, err
 	}
 	if ipPool == nil {
+		ctx.Logger.Info("IPPool is not found", "ipPoolNamespace", poolMatchLabels[ipam.ClusterIPPoolNamespaceKey], "ipPoolName", poolMatchLabels[ipam.ClusterIPPoolNameKey], "ipPoolGroupKey", poolMatchLabels[ipam.ClusterIPPoolGroupKey])
 		return nil, nil
 	}
 
