@@ -246,10 +246,9 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 	// If the IP has been allocated but the MachineStaticIPFinalizer has not been saved,
 	// deleting the Machine at this time may not release the IP.
 	//
-	// If the ElfMachine doesn't have MachineStaticIPFinalizer, add it.
+	// If the ElfMachine doesn't have MachineStaticIPFinalizer, add it and return with requeue.
+	// In next reconcile, the static IP will be allocated.
 	if !ctrlutil.ContainsFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer) {
-		// Set MachineStaticIPFinalizer and return to save it first.
-		// Then later reconciliation can allocate IP.
 		ctrlutil.AddFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
 
 		return ctrl.Result{RequeueAfter: 3 * time.Second}, nil
