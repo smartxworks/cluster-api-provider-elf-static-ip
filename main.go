@@ -41,6 +41,7 @@ import (
 	ctrlmgr "sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlsig "sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
+	apiv1beta1 "github.com/smartxworks/cluster-api-provider-elf-static-ip/api/v1beta1"
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/controllers"
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/manager"
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/version"
@@ -130,6 +131,13 @@ func main() {
 
 	// Create a function that adds all of the controllers and webhooks to the manager.
 	addToManager := func(ctx *context.ControllerManagerContext, mgr ctrlmgr.Manager) error {
+		if err := (&apiv1beta1.ElfMachineValidator{
+			Client: mgr.GetClient(),
+			Logger: mgr.GetLogger().WithName("ElfMachineValidator"),
+		}).SetupWebhookWithManager(mgr); err != nil {
+			return err
+		}
+
 		if err := controllers.AddMachineControllerToManager(ctx, mgr); err != nil {
 			return err
 		}
