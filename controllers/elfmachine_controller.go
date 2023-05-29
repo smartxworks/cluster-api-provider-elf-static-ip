@@ -223,20 +223,9 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 }
 
 func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (reconcile.Result, error) {
-	// If the ElfMachine is in an error state, return early.
-	if ctx.ElfMachine.IsFailed() {
-		r.Logger.V(2).Info("Error state detected, skipping reconciliation")
-		return reconcile.Result{}, nil
-	}
-
 	devices := ctx.ElfMachine.Spec.Network.Devices
-	if len(devices) == 0 {
-		ctx.Logger.V(2).Info("No network device found")
-		return ctrl.Result{}, nil
-	}
-
-	if !ipamutil.NeedsAllocateIP(devices) {
-		ctx.Logger.V(6).Info("No need to allocate static IP")
+	if !ipamutil.HasStaticIPDevice(devices) {
+		ctx.Logger.V(6).Info("No static IP network device found")
 		return ctrl.Result{}, nil
 	}
 
@@ -249,9 +238,29 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 	// If the ElfMachine doesn't have MachineStaticIPFinalizer, add it and return with requeue.
 	// In next reconcile, the static IP will be allocated.
 	if !ctrlutil.ContainsFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer) {
+		// Add MachineStaticIPFinalizer after setting MachineFinalizer,
+		// otherwise MachineStaticIPFinalizer may be overwritten by CAPE
+		// when setting MachineFinalizer.
+		if !ctrlutil.ContainsFinalizer(ctx.ElfMachine, capev1.MachineFinalizer) {
+			r.Logger.V(2).Info("Waiting for CAPE to set MachineFinalizer on ElfMachine")
+
+			return reconcile.Result{RequeueAfter: config.DefaultRequeue}, nil
+		}
+
 		ctrlutil.AddFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
 
 		return ctrl.Result{RequeueAfter: 3 * time.Second}, nil
+	}
+
+	// If the ElfMachine is in an error state, return early.
+	if ctx.ElfMachine.IsFailed() {
+		r.Logger.V(2).Info("Error state detected, skipping reconciliation")
+		return reconcile.Result{}, nil
+	}
+
+	if !ipamutil.NeedsAllocateIP(devices) {
+		ctx.Logger.V(6).Info("No need to allocate static IP")
+		return ctrl.Result{}, nil
 	}
 
 	ipPool, err := r.getIPPool(ctx)
