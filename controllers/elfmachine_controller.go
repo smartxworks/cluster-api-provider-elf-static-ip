@@ -32,6 +32,7 @@ import (
 	capiutil "sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/patch"
+	"sigs.k8s.io/cluster-api/util/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -70,7 +71,7 @@ type ElfMachineReconciler struct {
 	*capecontext.ControllerContext
 }
 
-func AddMachineControllerToManager(ctx *capecontext.ControllerManagerContext, mgr ctrlmgr.Manager) error {
+func AddMachineControllerToManager(ctx *capecontext.ControllerManagerContext, mgr ctrlmgr.Manager, options controller.Options) error {
 	var (
 		controlledType      = &capev1.ElfMachine{}
 		controlledTypeName  = reflect.TypeOf(controlledType).Elem().Name()
@@ -90,7 +91,8 @@ func AddMachineControllerToManager(ctx *capecontext.ControllerManagerContext, mg
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(controlledType).
-		WithOptions(controller.Options{MaxConcurrentReconciles: ctx.MaxConcurrentReconciles}).
+		WithOptions(options).
+		WithEventFilter(predicates.ResourceNotPausedAndHasFilterLabel(ctrl.LoggerFrom(ctx), ctx.WatchFilterValue)).
 		Complete(reconciler)
 }
 

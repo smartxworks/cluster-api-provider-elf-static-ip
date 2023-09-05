@@ -31,6 +31,7 @@ import (
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -38,7 +39,7 @@ import (
 // NewControllerManagerContext returns a fake ControllerManagerContext for unit
 // testing reconcilers and webhooks with a fake client. You can choose to
 // initialize it with a slice of runtime.Object.
-func NewControllerManagerContext(initObjects ...runtime.Object) *capecontext.ControllerManagerContext {
+func NewControllerManagerContext(initObjects ...client.Object) *capecontext.ControllerManagerContext {
 	scheme := runtime.NewScheme()
 	utilruntime.Must(cgscheme.AddToScheme(scheme))
 	utilruntime.Must(capiv1.AddToScheme(scheme))
@@ -49,9 +50,14 @@ func NewControllerManagerContext(initObjects ...runtime.Object) *capecontext.Con
 	utilruntime.Must(capev1.AddToScheme(scheme))
 	utilruntime.Must(ipamv1.AddToScheme(scheme))
 
+	clientWithObjects := fake.NewClientBuilder().WithScheme(scheme).WithStatusSubresource(
+		&capev1.ElfCluster{},
+		&capev1.ElfMachine{},
+	).WithObjects(initObjects...).Build()
+
 	return &capecontext.ControllerManagerContext{
 		Context:                 goctx.Background(),
-		Client:                  fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(initObjects...).Build(),
+		Client:                  clientWithObjects,
 		Logger:                  ctrllog.Log.WithName(capefake.ControllerManagerName),
 		Scheme:                  scheme,
 		Name:                    capefake.ControllerManagerName,

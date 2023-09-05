@@ -18,7 +18,6 @@ package helpers
 
 import (
 	goctx "context"
-	"flag"
 	"fmt"
 	"go/build"
 	"os"
@@ -44,11 +43,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/klogr"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
-	"sigs.k8s.io/cluster-api/cmd/clusterctl/log"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	capiutil "sigs.k8s.io/cluster-api/util"
@@ -59,19 +56,9 @@ import (
 )
 
 func init() {
-	klog.InitFlags(nil)
-	logger := klogr.New()
-
-	// use klog as the internal logger for this envtest environment.
-	log.SetLogger(logger)
-	// additionally force all of the controllers to use the Ginkgo logger.
-	ctrl.SetLogger(logger)
+	ctrl.SetLogger(klog.Background())
 	// add logger for ginkgo
 	klog.SetOutput(ginkgo.GinkgoWriter)
-
-	if err := flag.Set("v", "2"); err != nil {
-		klog.Fatalf("failed to set log level: %v", err)
-	}
 }
 
 var (

@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"testing"
@@ -25,7 +26,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	capecontext "github.com/smartxworks/cluster-api-provider-elf/pkg/context"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	ipamutil "github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam/util"
@@ -55,12 +58,26 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
+	// set log
+	klog.InitFlags(nil)
+	if err := flag.Set("logtostderr", "false"); err != nil {
+		_ = fmt.Errorf("Error setting logtostderr flag")
+	}
+	if err := flag.Set("v", "6"); err != nil {
+		_ = fmt.Errorf("Error setting v flag")
+	}
+	if err := flag.Set("alsologtostderr", "false"); err != nil {
+		_ = fmt.Errorf("Error setting alsologtostderr flag")
+	}
+
 	testEnv = helpers.NewTestEnvironment()
 
 	// Set kubeconfig.
 	os.Setenv("KUBECONFIG", testEnv.Kubeconfig)
 
-	if err := AddMachineControllerToManager(testEnv.GetContext(), testEnv.Manager); err != nil {
+	controllerOpts := controller.Options{MaxConcurrentReconciles: 10}
+
+	if err := AddMachineControllerToManager(testEnv.GetContext(), testEnv.Manager, controllerOpts); err != nil {
 		panic(fmt.Sprintf("unable to setup ElfMachine controller: %v", err))
 	}
 
@@ -80,7 +97,7 @@ func teardown() {
 	}
 }
 
-func newCtrlContexts(objs ...runtime.Object) *capecontext.ControllerContext {
+func newCtrlContexts(objs ...client.Object) *capecontext.ControllerContext {
 	ctrlMgrContext := fake.NewControllerManagerContext(objs...)
 	ctrlContext := &capecontext.ControllerContext{
 		ControllerManagerContext: ctrlMgrContext,
