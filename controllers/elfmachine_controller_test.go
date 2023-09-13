@@ -19,7 +19,6 @@ package controllers
 import (
 	"bytes"
 	goctx "context"
-	"flag"
 	"fmt"
 	"time"
 
@@ -59,13 +58,6 @@ var _ = Describe("ElfMachineReconciler", func() {
 	ctx := goctx.Background()
 
 	BeforeEach(func() {
-		// set log
-		if err := flag.Set("logtostderr", "false"); err != nil {
-			_ = fmt.Errorf("Error setting logtostderr flag")
-		}
-		if err := flag.Set("v", "6"); err != nil {
-			_ = fmt.Errorf("Error setting v flag")
-		}
 		logBuffer = new(bytes.Buffer)
 		klog.SetOutput(logBuffer)
 

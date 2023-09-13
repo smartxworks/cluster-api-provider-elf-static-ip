@@ -21,7 +21,6 @@ spec:
       containers:
       - args:
         - --leader-elect
-        - --logtostderr
         - --v=4
         image: docker.io/smartxworks/cape-ip-manager:latest
         imagePullPolicy: IfNotPresent
