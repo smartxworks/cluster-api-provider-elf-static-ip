@@ -19,7 +19,6 @@ package fake
 import (
 	"fmt"
 	"math/rand"
-	"time"
 )
 
 const (
@@ -28,8 +27,8 @@ const (
 )
 
 func IP() string {
-	rand.Seed(time.Now().UnixNano())
-	num := func() int { return rand.Intn(255) }
+	r := rand.New(rand.NewSource(255))
+	num := func() int { return r.Intn(255) }
 
 	return fmt.Sprintf("%d.%d.%d.%d", num(), num(), num(), num())
 }

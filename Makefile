@@ -20,6 +20,11 @@ SHELL := /usr/bin/env bash
 
 .DEFAULT_GOAL := help
 
+#
+# Go.
+#
+GO_VERSION ?= 1.20.8
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -95,19 +100,19 @@ kustomize: ## Download kustomize locally if necessary.
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.11.3)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.12.0)
 
 GINKGO := $(shell pwd)/bin/ginkgo
 ginkgo: ## Download ginkgo locally if necessary.
-	$(call go-get-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo@v2.9.2)
+	$(call go-get-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo@v2.11.0)
 
 KIND := $(shell pwd)/bin/kind
 kind: ## Download kind locally if necessary.
-	$(call go-get-tool,$(KIND),sigs.k8s.io/kind@v0.17.0)
+	$(call go-get-tool,$(KIND),sigs.k8s.io/kind@v0.20.0)
 
 GOLANGCI_LINT := $(shell pwd)/bin/golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.1)
+	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3)
 
 ## --------------------------------------
 ## Linting and fixing linter errors
@@ -229,7 +234,7 @@ docker-push: ## Push the docker image
 
 .PHONY: docker-pull-prerequisites
 docker-pull-prerequisites:
-	docker pull docker.io/docker/dockerfile:1.1-experimental
+	docker pull docker.io/docker/dockerfile:1.4
 	docker pull gcr.io/distroless/static:latest
 
 ## --------------------------------------
@@ -255,3 +260,13 @@ docker-push-manifest: ## Push the fat manifest docker image.
 	docker manifest create --amend $(CONTROLLER_IMG):$(IMAGE_TAG) $(shell echo $(ALL_ARCH) | sed -e "s~[^ ]*~$(CONTROLLER_IMG)\-&:$(IMAGE_TAG)~g")
 	@for arch in $(ALL_ARCH); do docker manifest annotate --arch $${arch} ${CONTROLLER_IMG}:${IMAGE_TAG} ${CONTROLLER_IMG}-$${arch}:${IMAGE_TAG}; done
 	docker manifest push --purge ${CONTROLLER_IMG}:${IMAGE_TAG}
+
+
+## --------------------------------------
+## Helpers
+## --------------------------------------
+
+##@ helpers:
+
+go-version: ## Print the go version we use to compile our binaries and images
+	@echo $(GO_VERSION)
