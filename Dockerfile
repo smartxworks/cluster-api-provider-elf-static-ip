@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.4
+
 # Copyright 2022.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Build architecture
+ARG ARCH
+
 # Build the manager binary
-FROM golang:1.19.6 as builder
+FROM golang:1.20.8 as builder
 WORKDIR /workspace
 
 # Run this with docker build --build_arg $(go env GOPROXY) to override the goproxy
@@ -31,14 +36,14 @@ RUN go mod download
 COPY ./ ./
 
 # Build
-ARG ARCH=amd64
 ARG ldflags
+
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} \
     go build -a -ldflags "${ldflags} -extldflags '-static'" \
     -o manager .
 
 # Copy the controller-manager into a thin image
-FROM gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/static:nonroot-${ARCH}
 WORKDIR /
 COPY --from=builder /workspace/manager .
 # Use uid of nonroot user (65532) because kubernetes expects numeric user when applying PSPs
