@@ -228,6 +228,14 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 docker-build: docker-pull-prerequisites ## Build the docker image for controller-manager
 	docker build --build-arg ARCH=$(ARCH) --build-arg ldflags="$(LDFLAGS)" . -t $(CONTROLLER_IMG)-$(ARCH):$(IMAGE_TAG)
 
+.PHONY: docker-buildx
+docker-buildx:
+	## init sks builder
+	## source https://newgh.smartx.com/raw/kubesmart/kubesmart/main/hack/image/library.sh
+	## MakeDockerBuilder
+	docker buildx build --builder sks-builder --push --pull --platform linux/amd64,linux/arm64 \
+		--build-arg ldflags="$(LDFLAGS)" -t $(CONTROLLER_IMG):$(IMAGE_TAG) -f Dockerfile.buildx  .
+
 .PHONY: docker-push
 docker-push: ## Push the docker image
 	docker push $(CONTROLLER_IMG)-$(ARCH):$(IMAGE_TAG)
