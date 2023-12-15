@@ -26,6 +26,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	capev1 "github.com/smartxworks/cluster-api-provider-elf/api/v1beta1"
+	capecontext "github.com/smartxworks/cluster-api-provider-elf/pkg/context"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apitypes "k8s.io/apimachinery/pkg/types"
@@ -37,7 +39,9 @@ import (
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/config"
+	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/context"
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam"
+	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam/metal3io"
 	ipamutil "github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam/util"
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/test/fake"
 )
@@ -295,7 +299,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 			Expect(result).To(BeZero())
 			Expect(err).ToNot(HaveOccurred())
-			Expect(logBuffer.String()).To(ContainSubstring("IPPool is not found, remove MachineStaticIPFinalizer"))
+			Expect(logBuffer.String()).To(ContainSubstring("IPPool is not found, so no need to release the IP"))
 			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine))).To(BeTrue())
 		})
 
@@ -328,6 +332,39 @@ var _ = Describe("ElfMachineReconciler", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine))).To(BeTrue())
 			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(metal3IPClaim), metal3IPClaim))).To(BeTrue())
+		})
+	})
+
+	Context("getIPPool", func() {
+		It("should prefer IPPool of device", func() {
+			metal3IPPool.Namespace = elfMachine.Namespace
+			elfMachine.Spec.Network.Devices = []capev1.NetworkDeviceSpec{
+				{NetworkType: capev1.NetworkTypeIPV4, IPAddrs: []string{}, AddressesFromPools: []corev1.TypedLocalObjectReference{
+					{APIGroup: pointer.String("ipam.metal3.io"), Kind: "IPPool", Name: metal3IPPool.Name},
+				}},
+			}
+			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+			machineContext := &context.MachineContext{
+				IPAMService: metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger),
+				MachineContext: &capecontext.MachineContext{
+					ControllerContext: ctrlContext,
+					Cluster:           cluster,
+					Machine:           machine,
+					ElfMachine:        elfMachine,
+					Logger:            ctrlContext.Logger,
+				},
+			}
+			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+			ipPool, err := reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ipPool.GetNamespace()).To(Equal(metal3IPPool.Namespace))
+			Expect(ipPool.GetName()).To(Equal(metal3IPPool.Name))
+
+			elfMachine.Spec.Network.Devices[0].AddressesFromPools[0].Name = "notfound"
+			ipPool, err = reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ipPool).To(BeNil())
 		})
 	})
 })

@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/pointer"
 )
 
 func TestLimitDNSServers(t *testing.T) {
@@ -42,4 +44,20 @@ func TestLimitDNSServers(t *testing.T) {
 			g.Expect(dnsServers).To(gomega.Equal(tc.dnsServers))
 		})
 	}
+}
+
+func TestIsMetal3IPPoolRef(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	t.Run("should return true if ref is Metal3 IPPool", func(t *testing.T) {
+		g.Expect(IsMetal3IPPoolRef(corev1.TypedLocalObjectReference{})).To(gomega.BeTrue())
+		g.Expect(IsMetal3IPPoolRef(corev1.TypedLocalObjectReference{
+			APIGroup: pointer.String("ipam.metal3.io"),
+			Kind:     "IPPool",
+		})).To(gomega.BeTrue())
+		g.Expect(IsMetal3IPPoolRef(corev1.TypedLocalObjectReference{
+			APIGroup: pointer.String("ipam.metal3.io"),
+			Kind:     "XPool",
+		})).To(gomega.BeFalse())
+	})
 }
