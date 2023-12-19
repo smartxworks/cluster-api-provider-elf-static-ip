@@ -43,7 +43,6 @@ import (
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/context"
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam"
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam/metal3io"
-	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam/util"
 	ipamutil "github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam/util"
 )
 
@@ -338,7 +337,7 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 func (r *ElfMachineReconciler) getIPPool(ctx *context.MachineContext, device capev1.NetworkDeviceSpec) (ipam.IPPool, error) {
 	poolMatchLabels := make(map[string]string)
 	// Prefer IPPool of device. Only Metal3 IPPool is supported now.
-	if len(device.AddressesFromPools) > 0 && util.IsMetal3IPPoolRef(device.AddressesFromPools[0]) {
+	if len(device.AddressesFromPools) > 0 && ipamutil.IsMetal3IPPoolRef(device.AddressesFromPools[0]) {
 		poolMatchLabels[ipam.ClusterIPPoolNamespaceKey] = ctx.ElfMachine.Namespace
 		poolMatchLabels[ipam.ClusterIPPoolNameKey] = device.AddressesFromPools[0].Name
 	} else {
