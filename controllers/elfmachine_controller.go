@@ -191,21 +191,18 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx *context.MachineContext) (rec
 		return ctrl.Result{}, nil
 	}
 
-	ipPool, err := r.getIPPool(ctx)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if ipPool == nil {
-		ctrlutil.RemoveFinalizer(ctx.ElfMachine, MachineStaticIPFinalizer)
-
-		r.Logger.V(1).Info("IPPool is not found, remove MachineStaticIPFinalizer")
-
-		return ctrl.Result{}, nil
-	}
-
 	var errs []error
 	for i := 0; i < len(ctx.ElfMachine.Spec.Network.Devices); i++ {
 		if !ipamutil.IsStaticIPDevice(ctx.ElfMachine.Spec.Network.Devices[i]) {
+			continue
+		}
+
+		ipPool, err := r.getIPPool(ctx, ctx.ElfMachine.Spec.Network.Devices[i])
+		if err != nil {
+			return ctrl.Result{}, err
+		} else if ipPool == nil {
+			r.Logger.V(1).Info("IPPool is not found, so no need to release the IP", "claim", ipamutil.GetFormattedClaimName(ctx.ElfMachine.Namespace, ctx.ElfMachine.Name, i))
+
 			continue
 		}
 
@@ -265,15 +262,6 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 		return ctrl.Result{}, nil
 	}
 
-	ipPool, err := r.getIPPool(ctx)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if ipPool == nil {
-		ctx.Logger.Info("Waiting for IPPool to be available")
-		return ctrl.Result{}, nil
-	}
-
 	defer func() {
 		if len(ctx.ElfMachine.Spec.Network.Nameservers) > 0 {
 			ctx.ElfMachine.Spec.Network.Nameservers = ipamutil.LimitDNSServers(ctx.ElfMachine.Spec.Network.Nameservers)
@@ -286,19 +274,28 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx *context.MachineContext) (
 			continue
 		}
 
+		ipPool, err := r.getIPPool(ctx, ctx.ElfMachine.Spec.Network.Devices[i])
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if ipPool == nil {
+			ctx.Logger.Info("Waiting for IPPool to be available")
+			return ctrl.Result{}, nil
+		}
+
 		result, err := r.reconcileDeviceIPAddress(ctx, ipPool, i)
 		if err != nil {
 			ctx.Logger.Error(err, fmt.Sprintf("failed to set IP address for device %d", i))
 			return reconcile.Result{}, err
 		}
 
+		if requeueAfter == 0 && len(ipPool.GetDNSServers()) > 0 {
+			ctx.ElfMachine.Spec.Network.Nameservers = append(ctx.ElfMachine.Spec.Network.Nameservers, ipPool.GetDNSServers()...)
+		}
+
 		if result.RequeueAfter != 0 {
 			requeueAfter = result.RequeueAfter
 		}
-	}
-
-	if requeueAfter == 0 && len(ipPool.GetDNSServers()) > 0 {
-		ctx.ElfMachine.Spec.Network.Nameservers = append(ctx.ElfMachine.Spec.Network.Nameservers, ipPool.GetDNSServers()...)
 	}
 
 	return reconcile.Result{RequeueAfter: requeueAfter}, nil
@@ -337,11 +334,19 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 	return ctrl.Result{}, nil
 }
 
-func (r *ElfMachineReconciler) getIPPool(ctx *context.MachineContext) (ipam.IPPool, error) {
-	poolMatchLabels, err := r.getIPPoolMatchLabels(ctx)
-	if err != nil {
-		ctx.Logger.Error(err, "failed to get IPPool match labels")
-		return nil, err
+func (r *ElfMachineReconciler) getIPPool(ctx *context.MachineContext, device capev1.NetworkDeviceSpec) (ipam.IPPool, error) {
+	poolMatchLabels := make(map[string]string)
+	// Prefer IPPool of device. Only Metal3 IPPool is supported now.
+	if len(device.AddressesFromPools) > 0 && ipamutil.IsMetal3IPPoolRef(device.AddressesFromPools[0]) {
+		poolMatchLabels[ipam.ClusterIPPoolNamespaceKey] = ctx.ElfMachine.Namespace
+		poolMatchLabels[ipam.ClusterIPPoolNameKey] = device.AddressesFromPools[0].Name
+	} else {
+		var err error
+		poolMatchLabels, err = r.getIPPoolMatchLabels(ctx)
+		if err != nil {
+			ctx.Logger.Error(err, "failed to get IPPool match labels")
+			return nil, err
+		}
 	}
 
 	ipPool, err := ctx.IPAMService.GetAvailableIPPool(ctx, poolMatchLabels, ctx.Cluster.ObjectMeta)

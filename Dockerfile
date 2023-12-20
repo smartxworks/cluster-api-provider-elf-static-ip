@@ -36,6 +36,7 @@ RUN go mod download
 COPY ./ ./
 
 # Build
+ARG ARCH
 ARG ldflags
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} \
