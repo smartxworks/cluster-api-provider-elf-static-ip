@@ -128,3 +128,9 @@ func GetObjRef(obj runtime.Object) corev1.ObjectReference {
 func GetFormattedClaimName(ownerNamespace, ownerName string, deviceCount int) string {
 	return fmt.Sprintf("%s-%s-%d", ownerNamespace, ownerName, deviceCount)
 }
+
+// IsMetal3IPPoolRef returns whether the ref is Metal3 IPPool.
+func IsMetal3IPPoolRef(ref corev1.TypedLocalObjectReference) bool {
+	return (ref.APIGroup != nil && *ref.APIGroup == "ipam.metal3.io" && ref.Kind == "IPPool") ||
+		((ref.APIGroup == nil || *ref.APIGroup == "") && ref.Kind == "")
+}
