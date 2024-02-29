@@ -74,10 +74,6 @@ func ValidateIP(ip ipam.IPAddress) error {
 		return fmt.Errorf("invalid 'mask' in IPAddress")
 	}
 
-	if ip.GetGateway() == "" {
-		return fmt.Errorf("invalid 'gateway' in IPAddress")
-	}
-
 	return nil
 }
 

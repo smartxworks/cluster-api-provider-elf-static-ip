@@ -326,7 +326,9 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 	device := &ctx.ElfMachine.Spec.Network.Devices[index]
 	device.IPAddrs = []string{ip.GetAddress()}
 	device.Netmask = ip.GetMask()
-	device.Routes = []capev1.NetworkDeviceRouteSpec{{Gateway: ip.GetGateway()}}
+	if ip.GetGateway() != "" {
+		device.Routes = []capev1.NetworkDeviceRouteSpec{{Gateway: ip.GetGateway()}}
+	}
 	if len(ip.GetDNSServers()) > 0 {
 		ctx.ElfMachine.Spec.Network.Nameservers = append(ctx.ElfMachine.Spec.Network.Nameservers, ip.GetDNSServers()...)
 	}
