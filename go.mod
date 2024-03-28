@@ -12,6 +12,7 @@ require (
 
 require (
 	github.com/go-logr/logr v1.2.4
+	github.com/go-ping/ping v1.1.0
 	github.com/onsi/ginkgo/v2 v2.12.0
 	github.com/onsi/gomega v1.27.10
 	github.com/pkg/errors v0.9.1
@@ -86,6 +87,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.17.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.10.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect

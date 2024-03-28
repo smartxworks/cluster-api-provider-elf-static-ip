@@ -30,6 +30,7 @@ func NewMetal3IPPool() *ipamv1.IPPool {
 			Namespace: Namespace,
 			Name:      names.SimpleNameGenerator.GenerateName("ippool-"),
 		},
+		Spec: ipamv1.IPPoolSpec{},
 	}
 }
 

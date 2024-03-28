@@ -47,6 +47,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} \
 FROM gcr.io/distroless/static:nonroot-${ARCH}
 WORKDIR /
 COPY --from=builder /workspace/manager .
+RUN setcap cap_net_raw=+ep /manager
 # Use uid of nonroot user (65532) because kubernetes expects numeric user when applying PSPs
 USER 65532
 ENTRYPOINT ["/manager"]
