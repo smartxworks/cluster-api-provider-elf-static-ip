@@ -35,6 +35,7 @@ import (
 	"k8s.io/utils/pointer"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capiutil "sigs.k8s.io/cluster-api/util"
+	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -265,6 +266,31 @@ var _ = Describe("ElfMachineReconciler", func() {
 		Expect(elfMachine.Spec.Network.Devices[0].IPAddrs).To(Equal([]string{string(metal3IPAddress.Spec.Address)}))
 		// DNS server is unique and DNS server priority of ElfMachine is higher than IPPool.
 		Expect(elfMachine.Spec.Network.Nameservers).To(Equal([]string{"3.3.3.3", "2.2.2.2", "1.1.1.1"}))
+		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
+	})
+
+	It("should check if the IP is already in use", func() {
+		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
+		elfMachineTemplate.Labels[ipam.ClusterIPPoolNamespaceKey] = metal3IPPool.Namespace
+		elfMachineTemplate.Labels[ipam.ClusterIPPoolNameKey] = metal3IPPool.Name
+		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))
+		metal3IPAddress.Spec.Address = ipamv1.IPAddressStr("127.0.0.1")
+		setMetal3IPForClaim(metal3IPClaim, metal3IPAddress)
+		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+
+		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
+		Expect(result).NotTo(BeZero())
+		Expect(err).ToNot(HaveOccurred())
+		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(elfMachine.Spec.Network.Devices[0].IPAddrs).To(BeEmpty())
+		message := "IP address 127.0.0.1 allocated to network device 0 has been used already"
+		Expect(logBuffer.String()).To(ContainSubstring(message))
+		condition := conditions.Get(elfMachine, capev1.VMProvisionedCondition)
+		Expect(condition).NotTo(BeNil())
+		Expect(condition.Reason).To(Equal(capev1.WaitingForStaticIPAllocationReason))
+		Expect(condition.Message).To(Equal(message))
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 

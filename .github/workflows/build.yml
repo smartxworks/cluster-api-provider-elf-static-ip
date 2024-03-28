@@ -30,7 +30,7 @@ jobs:
 
       - run: make lint
 
-      - run: make test
+      - run: sudo -E sh -c 'make test'
 
       - uses: codecov/codecov-action@v3
         with:

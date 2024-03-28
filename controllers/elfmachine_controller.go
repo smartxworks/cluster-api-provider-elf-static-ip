@@ -31,6 +31,7 @@ import (
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capiutil "sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
+	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/cluster-api/util/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,6 +45,7 @@ import (
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam"
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam/metal3io"
 	ipamutil "github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam/util"
+	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/util"
 )
 
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=elfmachines,verbs=get;list;watch;create;update;patch;delete
@@ -319,6 +321,19 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 
 	if err := ipamutil.ValidateIP(ip); err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "invalid IP address retrieved %s", ipName)
+	}
+
+	if !util.SkipPingIP() {
+		if reachable, err := util.Ping(ip.GetAddress()); err != nil {
+			return ctrl.Result{}, errors.Wrapf(err, "failed to ping IP address %s", ip.GetAddress())
+		} else if reachable {
+			message := fmt.Sprintf("IP address %s allocated to network device %d has been used already", ip.GetAddress(), index)
+			conditions.MarkFalse(ctx.ElfMachine, capev1.VMProvisionedCondition, capev1.WaitingForStaticIPAllocationReason, capiv1.ConditionSeverityWarning, message)
+
+			ctx.Logger.V(1).Info(message, "ipAddress", ip.GetName())
+
+			return ctrl.Result{RequeueAfter: config.DefaultRequeue}, nil
+		}
 	}
 
 	ctx.Logger.V(1).Info("Static IP selected", "IPAddress", ip.GetName())
