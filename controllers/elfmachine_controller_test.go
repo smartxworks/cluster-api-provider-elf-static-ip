@@ -226,9 +226,11 @@ var _ = Describe("ElfMachineReconciler", func() {
 
 	It("should wait for IP when IPClaim without IP", func() {
 		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
+		metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
 		metal3IPPool.Labels = map[string]string{
 			ipam.ClusterIPPoolGroupKey: "ip-pool-group",
 			ipam.ClusterNetworkNameKey: "ip-pool-vm-network",
+			ipam.DefaultIPPoolKey:      "true",
 		}
 		elfMachineTemplate.Labels = metal3IPPool.Labels
 		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))

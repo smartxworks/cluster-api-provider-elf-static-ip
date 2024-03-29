@@ -130,26 +130,28 @@ func (m *Metal3IPAM) ReleaseIPs(ctx goctx.Context, owner metav1.Object, pool ipa
 
 func (m *Metal3IPAM) GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[string]string, clusterMeta metav1.ObjectMeta) (ipam.IPPool, error) {
 	poolNamespace := getIPPoolNamespace(poolMatchLabels, clusterMeta)
+	poolName := poolMatchLabels[ipam.ClusterIPPoolNameKey]
 
-	// if the specific ip-pool name is provided use that to get the ip-pool
-	var ipPool ipamv1.IPPool
-	if poolName, ok := poolMatchLabels[ipam.ClusterIPPoolNameKey]; ok && poolName != "" {
-		if err := m.Get(ctx, apitypes.NamespacedName{
-			Namespace: poolNamespace,
-			Name:      poolName,
-		}, &ipPool); err != nil {
-			if apierrors.IsNotFound(err) {
-				return nil, nil
-			}
-
-			return nil, errors.Wrapf(err, "failed to get IPPool %s/%s", poolNamespace, poolName)
-		}
-
-		return toIPPool(ipPool), nil
+	// 1. If the specific ip-pool name is provided use that to get the ip-pool.
+	if poolName != "" {
+		return m.getIPPoolByName(ctx, poolNamespace, poolName)
 	}
 
-	matchLabels := map[string]string{}
+	// 2. Otherwise use default ip-pool
 
+	ipPoolList := &ipamv1.IPPoolList{}
+	if err := m.List(
+		ctx,
+		ipPoolList,
+		client.InNamespace(clusterMeta.Namespace),
+		client.MatchingLabels(map[string]string{ipam.DefaultIPPoolKey: "true"})); err != nil {
+		return nil, err
+	}
+	if len(ipPoolList.Items) > 0 {
+		return toIPPool(ipPoolList.Items[0]), nil
+	}
+
+	matchLabels := map[string]string{ipam.DefaultIPPoolKey: "true"}
 	// use labels 'ip-pool-group' & 'network-name' to select the ip-pool
 	if label, ok := poolMatchLabels[ipam.ClusterIPPoolGroupKey]; ok && label != "" {
 		matchLabels[ipam.ClusterIPPoolGroupKey] = label
@@ -158,30 +160,50 @@ func (m *Metal3IPAM) GetAvailableIPPool(ctx goctx.Context, poolMatchLabels map[s
 		matchLabels[ipam.ClusterNetworkNameKey] = label
 	}
 
-	// use default ip-pool
-	if len(matchLabels) == 0 {
-		poolNamespace = ipam.DefaultIPPoolNamespace
-		matchLabels[ipam.DefaultIPPoolKey] = "true"
-	}
-
-	ipPoolList := &ipamv1.IPPoolList{}
+	ipPoolList = &ipamv1.IPPoolList{}
 	if err := m.List(
 		ctx,
 		ipPoolList,
-		client.InNamespace(poolNamespace),
+		client.InNamespace(ipam.DefaultIPPoolNamespace),
 		client.MatchingLabels(matchLabels)); err != nil {
 		return nil, err
 	}
 
 	if len(ipPoolList.Items) == 0 {
-		m.logger.Info("failed to get a matching IPPool")
 		return nil, nil
 	}
-	ipPool = ipPoolList.Items[0]
 
-	m.logger.Info(fmt.Sprintf("IPPool %s is available", ipPool.Name))
+	return toIPPool(ipPoolList.Items[0]), nil
+}
 
-	return toIPPool(ipPool), nil
+// getIPPoolByName returns the IPPool with the specified name.
+//
+// If IPPool is not found in the specified namespace, will try to find from the
+// default namespace.
+func (m *Metal3IPAM) getIPPoolByName(ctx goctx.Context, poolNamespace, poolName string) (ipam.IPPool, error) {
+	var ipPool ipamv1.IPPool
+	err := m.Get(ctx, apitypes.NamespacedName{
+		Namespace: poolNamespace,
+		Name:      poolName,
+	}, &ipPool)
+	if err == nil {
+		return toIPPool(ipPool), nil
+	} else if !apierrors.IsNotFound(err) {
+		return nil, errors.Wrapf(err, "failed to get IPPool %s/%s", poolNamespace, poolName)
+	}
+
+	// Try the ip-pool default namespace.
+	err = m.Get(ctx, apitypes.NamespacedName{
+		Namespace: ipam.DefaultIPPoolNamespace,
+		Name:      poolName,
+	}, &ipPool)
+	if err == nil {
+		return toIPPool(ipPool), nil
+	} else if apierrors.IsNotFound(err) {
+		return nil, nil
+	}
+
+	return nil, errors.Wrapf(err, "failed to get IPPool %s/%s", poolNamespace, poolName)
 }
 
 func (m *Metal3IPAM) getIPClaim(ctx goctx.Context, pool ipam.IPPool, claimName string) (*ipamv1.IPClaim, error) {
