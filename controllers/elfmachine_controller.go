@@ -340,12 +340,12 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx *context.MachineCont
 //
 // getIPPool selects IPPool according to the following priorities:
 // (1) Without ip-pool-name
-//    1. select IPPool with `is-default`` label from elfMachine.Namespace
-//    2. select IPPool with `is-default` label from default namespace
+//  1. select IPPool with `is-default“ label from elfMachine.Namespace
+//  2. select IPPool with `is-default` label from default namespace
+//
 // (2) With ip-pool-name(from AddressesFromPools or ElfMachineTemplate)
-//    1. select IPPool using the specified ip-pool-name and ip-pool-namespace
-//    2. select the IPPool named ip-pool-name in the default namespace
-
+//  1. select IPPool using the specified ip-pool-name and ip-pool-namespace
+//  2. select the IPPool named ip-pool-name in the default namespace
 func (r *ElfMachineReconciler) getIPPool(ctx *context.MachineContext, device capev1.NetworkDeviceSpec) (ipam.IPPool, error) {
 	poolMatchLabels := make(map[string]string)
 	// Prefer IPPool of device. Only Metal3 IPPool is supported now.
