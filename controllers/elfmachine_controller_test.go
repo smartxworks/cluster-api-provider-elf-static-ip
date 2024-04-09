@@ -26,7 +26,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	capev1 "github.com/smartxworks/cluster-api-provider-elf/api/v1beta1"
-	capecontext "github.com/smartxworks/cluster-api-provider-elf/pkg/context"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +38,6 @@ import (
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/config"
-	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/context"
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam"
 	"github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam/metal3io"
 	ipamutil "github.com/smartxworks/cluster-api-provider-elf-static-ip/pkg/ipam/util"
@@ -347,23 +345,57 @@ var _ = Describe("ElfMachineReconciler", func() {
 			}
 			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
 			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
-			machineContext := &context.MachineContext{
-				IPAMService: metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger),
-				MachineContext: &capecontext.MachineContext{
-					ControllerContext: ctrlContext,
-					Cluster:           cluster,
-					Machine:           machine,
-					ElfMachine:        elfMachine,
-					Logger:            ctrlContext.Logger,
-				},
-			}
+			machineContext := newMachineContext(ctrlContext, metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger), cluster, machine, elfMachine)
 			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
 			ipPool, err := reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ipPool.GetNamespace()).To(Equal(metal3IPPool.Namespace))
 			Expect(ipPool.GetName()).To(Equal(metal3IPPool.Name))
 
+			metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
+			ctrlContext = newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+			machineContext = newMachineContext(ctrlContext, metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger), cluster, machine, elfMachine)
+			reconciler = &ElfMachineReconciler{ControllerContext: ctrlContext}
+			ipPool, err = reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ipPool.GetName()).To(Equal(metal3IPPool.Name))
+
 			elfMachine.Spec.Network.Devices[0].AddressesFromPools[0].Name = "notfound"
+			ipPool, err = reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ipPool).To(BeNil())
+		})
+
+		It("should get the default ip-pool", func() {
+			metal3IPPool.Namespace = cluster.Namespace
+			metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
+			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+			machineContext := newMachineContext(ctrlContext, metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger), cluster, machine, elfMachine)
+			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+			ipPool, err := reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ipPool.GetNamespace()).To(Equal(metal3IPPool.Namespace))
+			Expect(ipPool.GetName()).To(Equal(metal3IPPool.Name))
+
+			metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
+			metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
+			ctrlContext = newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+			machineContext = newMachineContext(ctrlContext, metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger), cluster, machine, elfMachine)
+			reconciler = &ElfMachineReconciler{ControllerContext: ctrlContext}
+			ipPool, err = reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ipPool.GetNamespace()).To(Equal(metal3IPPool.Namespace))
+			Expect(ipPool.GetName()).To(Equal(metal3IPPool.Name))
+
+			metal3IPPool.Namespace = "notfoud"
+			metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
+			ctrlContext = newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+			machineContext = newMachineContext(ctrlContext, metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger), cluster, machine, elfMachine)
+			reconciler = &ElfMachineReconciler{ControllerContext: ctrlContext}
 			ipPool, err = reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ipPool).To(BeNil())
