@@ -42,8 +42,9 @@ import (
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/cluster-api/feature"
-	"sigs.k8s.io/cluster-api/util/flags"
+	capiflags "sigs.k8s.io/cluster-api/util/flags"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlmgr "sigs.k8s.io/controller-runtime/pkg/manager"
@@ -73,8 +74,10 @@ var (
 
 	elfMachineConcurrency int
 
-	tlsOptions = flags.TLSOptions{}
+	tlsOptions         = capiflags.TLSOptions{}
+	diagnosticsOptions = capiflags.DiagnosticsOptions{}
 
+	defaultProfilerAddr     = os.Getenv("PROFILER_ADDR")
 	defaultSyncPeriod       = manager.DefaultSyncPeriod
 	defaultLeaderElectionID = manager.DefaultLeaderElectionID
 	defaultPodName          = manager.DefaultPodName
@@ -102,9 +105,6 @@ func InitFlags(fs *pflag.FlagSet) {
 
 	logsv1.AddFlags(logOptions, fs)
 
-	fs.StringVar(&managerOpts.MetricsBindAddress, "metrics-bind-addr", "localhost:8080",
-		"The address the metric endpoint binds to.")
-
 	fs.BoolVar(&managerOpts.LeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 
@@ -123,7 +123,7 @@ func InitFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&managerOpts.WatchFilterValue, "watch-filter", "",
 		fmt.Sprintf("Label value that the controller watches to reconcile cluster-api objects. Label key is always %s. If unspecified, the controller watches for all cluster-api objects.", capiv1.WatchLabel))
 
-	fs.StringVar(&managerOpts.PprofBindAddress, "profiler-address", "",
+	fs.StringVar(&managerOpts.PprofBindAddress, "profiler-address", defaultProfilerAddr,
 		"Bind address to expose the pprof profiler (e.g. localhost:6060)")
 
 	fs.BoolVar(&enableContentionProfiling, "contention-profiling", false,
@@ -147,10 +147,14 @@ func InitFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&managerOpts.HealthProbeBindAddress, "health-addr", ":9440",
 		"The address the health endpoint binds to.")
 
-	flags.AddTLSOptions(fs, &tlsOptions)
-
+	capiflags.AddTLSOptions(fs, &tlsOptions)
+	capiflags.AddDiagnosticsOptions(fs, &diagnosticsOptions)
 	feature.MutableGates.AddFlag(fs)
 }
+
+// Add RBAC for the authorized diagnostics endpoint.
+// +kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
+// +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 
 func main() {
 	InitFlags(pflag.CommandLine)
@@ -176,15 +180,16 @@ func main() {
 	managerOpts.KubeConfig.UserAgent = remote.DefaultClusterAPIUserAgent(controllerName)
 
 	if watchNamespace != "" {
-		managerOpts.Cache.Namespaces = []string{watchNamespace}
-		setupLog.Info(
-			"Watching objects only in namespace for reconciliation",
-			"namespace", watchNamespace)
+		managerOpts.Cache.DefaultNamespaces = map[string]cache.Config{
+			watchNamespace: {},
+		}
 	}
 
-	if managerOpts.PprofBindAddress != "" && enableContentionProfiling {
+	if enableContentionProfiling {
 		goruntime.SetBlockProfileRate(1)
 	}
+
+	setupLog.Info(fmt.Sprintf("Feature gates: %+v\n", feature.Gates))
 
 	managerOpts.Cache.SyncPeriod = &syncPeriod
 	managerOpts.LeaseDuration = &leaderElectionLeaseDuration
@@ -210,16 +215,17 @@ func main() {
 		return nil
 	}
 
-	tlsOptionOverrides, err := flags.GetTLSOptionOverrideFuncs(tlsOptions)
+	tlsOptionOverrides, err := capiflags.GetTLSOptionOverrideFuncs(tlsOptions)
 	if err != nil {
 		setupLog.Error(err, "unable to add TLS settings to the webhook server")
 		os.Exit(1)
 	}
 	webhookOpts.TLSOpts = tlsOptionOverrides
 	managerOpts.WebhookServer = webhook.NewServer(webhookOpts)
+	managerOpts.AddToManager = addToManager
+	managerOpts.Metrics = capiflags.GetDiagnosticsOptions(diagnosticsOptions)
 
 	setupLog.Info("creating controller manager", "version", version.Get().String())
-	managerOpts.AddToManager = addToManager
 	mgr, err := capemanager.New(managerOpts)
 	if err != nil {
 		setupLog.Error(err, "problem creating controller manager")
