@@ -118,7 +118,7 @@ type (
 )
 
 // NewTestEnvironment creates a new environment spinning up a local api-server.
-func NewTestEnvironment() *TestEnvironment {
+func NewTestEnvironment(ctx goctx.Context) *TestEnvironment {
 	// Create the test environment.
 	env := &envtest.Environment{
 		ErrorIfCRDPathMissing: true,
@@ -157,11 +157,11 @@ func NewTestEnvironment() *TestEnvironment {
 		},
 		KubeConfig: env.Config,
 	}
-	managerOpts.AddToManager = func(ctx *context.ControllerManagerContext, mgr ctrlmgr.Manager) error {
+	managerOpts.AddToManager = func(ctx goctx.Context, ctrlMgrCtx *context.ControllerManagerContext, mgr ctrlmgr.Manager) error {
 		return nil
 	}
 
-	mgr, err := manager.New(managerOpts)
+	mgr, err := manager.New(ctx, managerOpts)
 	if err != nil {
 		klog.Fatalf("failed to create the SKS controller manager: %v", err)
 	}

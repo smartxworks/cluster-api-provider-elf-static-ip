@@ -17,8 +17,6 @@ limitations under the License.
 package fake
 
 import (
-	goctx "context"
-
 	ipamv1 "github.com/metal3-io/ip-address-manager/api/v1alpha1"
 	capev1 "github.com/smartxworks/cluster-api-provider-elf/api/v1beta1"
 	capecontext "github.com/smartxworks/cluster-api-provider-elf/pkg/context"
@@ -33,7 +31,6 @@ import (
 	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // NewControllerManagerContext returns a fake ControllerManagerContext for unit
@@ -56,9 +53,7 @@ func NewControllerManagerContext(initObjects ...client.Object) *capecontext.Cont
 	).WithObjects(initObjects...).Build()
 
 	return &capecontext.ControllerManagerContext{
-		Context:                 goctx.Background(),
 		Client:                  clientWithObjects,
-		Logger:                  ctrllog.Log.WithName(capefake.ControllerManagerName),
 		Scheme:                  scheme,
 		Name:                    capefake.ControllerManagerName,
 		LeaderElectionNamespace: capefake.LeaderElectionNamespace,
