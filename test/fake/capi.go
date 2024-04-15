@@ -17,6 +17,8 @@ limitations under the License.
 package fake
 
 import (
+	goctx "context"
+
 	capev1 "github.com/smartxworks/cluster-api-provider-elf/api/v1beta1"
 	"github.com/smartxworks/cluster-api-provider-elf/pkg/context"
 	capefake "github.com/smartxworks/cluster-api-provider-elf/test/fake"
@@ -45,8 +47,8 @@ func NewClusterAndMachineObjects() (*capev1.ElfCluster, *capiv1.Cluster, *capev1
 }
 
 func InitOwnerReferences(
-	ctrlContext *context.ControllerContext,
+	ctx goctx.Context, ctrlMgrCtx *context.ControllerManagerContext,
 	elfCluster *capev1.ElfCluster, cluster *capiv1.Cluster,
 	elfMachine *capev1.ElfMachine, machine *capiv1.Machine) {
-	capefake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+	capefake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 }

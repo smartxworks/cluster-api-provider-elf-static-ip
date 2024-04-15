@@ -68,9 +68,9 @@ var _ = Describe("ElfMachineReconciler", func() {
 	})
 
 	It("should not reconcile when ElfMachine not found", func() {
-		ctrlContext := newCtrlContexts()
+		ctrlMgrCtx := fake.NewControllerManagerContext()
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
 		Expect(err).ToNot(HaveOccurred())
@@ -81,10 +81,10 @@ var _ = Describe("ElfMachineReconciler", func() {
 		ctrlutil.AddFinalizer(elfMachine, capev1.MachineFinalizer)
 		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
 		elfMachine.Status.FailureMessage = pointer.String("some error")
-		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
-		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
 		Expect(err).ToNot(HaveOccurred())
@@ -92,9 +92,9 @@ var _ = Describe("ElfMachineReconciler", func() {
 	})
 
 	It("should not reconcile when ElfMachine without Machine", func() {
-		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
 		Expect(err).ToNot(HaveOccurred())
@@ -103,10 +103,10 @@ var _ = Describe("ElfMachineReconciler", func() {
 
 	It("should not reconcile when ElfMachine without Machine", func() {
 		cluster.Spec.Paused = true
-		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
-		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
 		Expect(err).ToNot(HaveOccurred())
@@ -116,15 +116,15 @@ var _ = Describe("ElfMachineReconciler", func() {
 	It("should not reconcile without static IP network devices", func() {
 		ctrlutil.RemoveFinalizer(elfMachine, MachineStaticIPFinalizer)
 		elfMachine.Spec.Network.Devices = []capev1.NetworkDeviceSpec{}
-		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
-		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring("No static IP network device found"))
-		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
 	})
 
@@ -136,67 +136,67 @@ var _ = Describe("ElfMachineReconciler", func() {
 			{NetworkType: capev1.NetworkTypeIPV4DHCP},
 			{NetworkType: capev1.NetworkTypeNone},
 		}
-		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
-		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring("No need to allocate static IP"))
-		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 	})
 
 	It("should set MachineStaticIPFinalizer first", func() {
-		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
-		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).NotTo(BeZero())
 		Expect(err).NotTo(HaveOccurred())
-		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
 		Expect(logBuffer.String()).To(ContainSubstring("Waiting for CAPE to set MachineFinalizer on ElfMachine"))
 
 		ctrlutil.AddFinalizer(elfMachine, capev1.MachineFinalizer)
-		ctrlContext = newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
-		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+		ctrlMgrCtx = fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-		reconciler = &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler = &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err = reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).NotTo(BeZero())
 		Expect(err).NotTo(HaveOccurred())
-		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 
 	It("should not reconcile when no cloned-from-name annotation", func() {
 		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
 		elfMachine.Annotations[capiv1.TemplateClonedFromNameAnnotation] = ""
-		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
-		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
 		Expect(apierrors.IsNotFound(err)).To(BeTrue())
 		Expect(logBuffer.String()).To(ContainSubstring("failed to get IPPool match labels"))
-		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 
 	It("should not reconcile when no IPPool", func() {
 		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
-		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
-		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring("Waiting for IPPool to be available"))
-		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 
@@ -204,21 +204,21 @@ var _ = Describe("ElfMachineReconciler", func() {
 		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
 		elfMachineTemplate.Labels[ipam.ClusterIPPoolNamespaceKey] = metal3IPPool.Namespace
 		elfMachineTemplate.Labels[ipam.ClusterIPPoolNameKey] = metal3IPPool.Name
-		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool)
-		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool)
+		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result.RequeueAfter).To(Equal(config.DefaultRequeue))
 		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address for %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))))
 		var ipClaim ipamv1.IPClaim
-		Expect(ctrlContext.Client.Get(ctrlContext, apitypes.NamespacedName{
+		Expect(ctrlMgrCtx.Client.Get(ctx, apitypes.NamespacedName{
 			Namespace: metal3IPPool.Namespace,
 			Name:      ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0),
 		}, &ipClaim)).To(Succeed())
 		Expect(ipClaim.Spec.Pool.Name).To(Equal(metal3IPPool.Name))
-		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 
@@ -232,16 +232,16 @@ var _ = Describe("ElfMachineReconciler", func() {
 		}
 		elfMachineTemplate.Labels = metal3IPPool.Labels
 		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))
-		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim)
-		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim)
+		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result.RequeueAfter).To(Equal(config.DefaultRequeue))
 		Expect(err).ToNot(HaveOccurred())
 		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("IPClaim %s already exists, skipping creation", ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))))
 		Expect(logBuffer.String()).To(ContainSubstring(fmt.Sprintf("Waiting for IP address for %s to be available", ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))))
-		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 
@@ -254,14 +254,14 @@ var _ = Describe("ElfMachineReconciler", func() {
 		metal3IPAddress.Spec.DNSServers = append(metal3IPAddress.Spec.DNSServers, ipamv1.IPAddressStr("2.2.2.2"), ipamv1.IPAddressStr("3.3.3.3"))
 		setMetal3IPForClaim(metal3IPClaim, metal3IPAddress)
 		elfMachine.Spec.Network.Nameservers = []string{"3.3.3.3"}
-		ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
-		fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-		reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+		reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 		result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 		Expect(result).To(BeZero())
 		Expect(err).ToNot(HaveOccurred())
-		Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 		Expect(elfMachine.Spec.Network.Devices[0].IPAddrs).To(Equal([]string{string(metal3IPAddress.Spec.Address)}))
 		// DNS server is unique and DNS server priority of ElfMachine is higher than IPPool.
 		Expect(elfMachine.Spec.Network.Nameservers).To(Equal([]string{"3.3.3.3", "2.2.2.2", "1.1.1.1"}))
@@ -278,41 +278,41 @@ var _ = Describe("ElfMachineReconciler", func() {
 		It("should remove MachineStaticIPFinalizer without IPV4 devices", func() {
 			ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
 			elfMachine.Spec.Network.Devices = []capev1.NetworkDeviceSpec{{NetworkType: capev1.NetworkTypeIPV4DHCP}}
-			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
-			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+			ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+			fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+			reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 			Expect(result).To(BeZero())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(logBuffer.String()).To(ContainSubstring("No static IP network device found, but MachineStaticIPFinalizer is set and remove it"))
-			Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+			Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 			Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeFalse())
 		})
 
 		It("should remove MachineStaticIPFinalizer without IPPool", func() {
 			ctrlutil.RemoveFinalizer(elfMachine, capev1.MachineFinalizer)
-			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
-			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+			ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+			fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+			reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 			Expect(result).To(BeZero())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(logBuffer.String()).To(ContainSubstring("IPPool is not found, so no need to release the IP"))
-			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine))).To(BeTrue())
+			Expect(apierrors.IsNotFound(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine))).To(BeTrue())
 		})
 
 		It("should not reconcile with MachineFinalizer", func() {
-			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
-			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+			ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
+			fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+			reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 			Expect(result).To(BeZero())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(logBuffer.String()).To(ContainSubstring("Waiting for MachineFinalizer to be removed"))
-			Expect(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+			Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
 			Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 		})
 
@@ -323,15 +323,15 @@ var _ = Describe("ElfMachineReconciler", func() {
 			metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))
 			setMetal3IPForClaim(metal3IPClaim, metal3IPAddress)
 			metal3IPClaim.Labels = map[string]string{ipam.IPOwnerNameKey: fmt.Sprintf("%s-%s", elfMachine.GetNamespace(), elfMachine.GetName())}
-			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
-			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
+			ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+			fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
-			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
+			reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
 			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: capiutil.ObjectKey(elfMachine)})
 			Expect(result).To(BeZero())
 			Expect(err).ToNot(HaveOccurred())
-			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(elfMachine), elfMachine))).To(BeTrue())
-			Expect(apierrors.IsNotFound(ctrlContext.Client.Get(ctrlContext, capiutil.ObjectKey(metal3IPClaim), metal3IPClaim))).To(BeTrue())
+			Expect(apierrors.IsNotFound(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine))).To(BeTrue())
+			Expect(apierrors.IsNotFound(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(metal3IPClaim), metal3IPClaim))).To(BeTrue())
 		})
 	})
 
@@ -343,26 +343,26 @@ var _ = Describe("ElfMachineReconciler", func() {
 					{APIGroup: pointer.String("ipam.metal3.io"), Kind: "IPPool", Name: metal3IPPool.Name},
 				}},
 			}
-			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
-			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
-			machineContext := newMachineContext(ctrlContext, metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger), cluster, machine, elfMachine)
-			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
-			ipPool, err := reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+			fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
+			machineContext := newMachineContext(metal3io.NewIpam(ctrlMgrCtx.Client, ctrl.LoggerFrom(ctx)), cluster, machine, elfMachine)
+			reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
+			ipPool, err := reconciler.getIPPool(ctx, machineContext, elfMachine.Spec.Network.Devices[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ipPool.GetNamespace()).To(Equal(metal3IPPool.Namespace))
 			Expect(ipPool.GetName()).To(Equal(metal3IPPool.Name))
 
 			metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
-			ctrlContext = newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
-			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
-			machineContext = newMachineContext(ctrlContext, metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger), cluster, machine, elfMachine)
-			reconciler = &ElfMachineReconciler{ControllerContext: ctrlContext}
-			ipPool, err = reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			ctrlMgrCtx = fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+			fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
+			machineContext = newMachineContext(metal3io.NewIpam(ctrlMgrCtx.Client, ctrl.LoggerFrom(ctx)), cluster, machine, elfMachine)
+			reconciler = &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
+			ipPool, err = reconciler.getIPPool(ctx, machineContext, elfMachine.Spec.Network.Devices[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ipPool.GetName()).To(Equal(metal3IPPool.Name))
 
 			elfMachine.Spec.Network.Devices[0].AddressesFromPools[0].Name = "notfound"
-			ipPool, err = reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			ipPool, err = reconciler.getIPPool(ctx, machineContext, elfMachine.Spec.Network.Devices[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ipPool).To(BeNil())
 		})
@@ -370,33 +370,33 @@ var _ = Describe("ElfMachineReconciler", func() {
 		It("should get the default ip-pool", func() {
 			metal3IPPool.Namespace = cluster.Namespace
 			metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
-			ctrlContext := newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
-			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
-			machineContext := newMachineContext(ctrlContext, metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger), cluster, machine, elfMachine)
-			reconciler := &ElfMachineReconciler{ControllerContext: ctrlContext}
-			ipPool, err := reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+			fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
+			machineContext := newMachineContext(metal3io.NewIpam(ctrlMgrCtx.Client, ctrl.LoggerFrom(ctx)), cluster, machine, elfMachine)
+			reconciler := &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
+			ipPool, err := reconciler.getIPPool(ctx, machineContext, elfMachine.Spec.Network.Devices[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ipPool.GetNamespace()).To(Equal(metal3IPPool.Namespace))
 			Expect(ipPool.GetName()).To(Equal(metal3IPPool.Name))
 
 			metal3IPPool.Namespace = ipam.DefaultIPPoolNamespace
 			metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
-			ctrlContext = newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
-			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
-			machineContext = newMachineContext(ctrlContext, metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger), cluster, machine, elfMachine)
-			reconciler = &ElfMachineReconciler{ControllerContext: ctrlContext}
-			ipPool, err = reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			ctrlMgrCtx = fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+			fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
+			machineContext = newMachineContext(metal3io.NewIpam(ctrlMgrCtx.Client, ctrl.LoggerFrom(ctx)), cluster, machine, elfMachine)
+			reconciler = &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
+			ipPool, err = reconciler.getIPPool(ctx, machineContext, elfMachine.Spec.Network.Devices[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ipPool.GetNamespace()).To(Equal(metal3IPPool.Namespace))
 			Expect(ipPool.GetName()).To(Equal(metal3IPPool.Name))
 
 			metal3IPPool.Namespace = "notfoud"
 			metal3IPPool.Labels = map[string]string{ipam.DefaultIPPoolKey: "true"}
-			ctrlContext = newCtrlContexts(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
-			fake.InitOwnerReferences(ctrlContext, elfCluster, cluster, elfMachine, machine)
-			machineContext = newMachineContext(ctrlContext, metal3io.NewIpam(ctrlContext.Client, ctrlContext.Logger), cluster, machine, elfMachine)
-			reconciler = &ElfMachineReconciler{ControllerContext: ctrlContext}
-			ipPool, err = reconciler.getIPPool(machineContext, elfMachine.Spec.Network.Devices[0])
+			ctrlMgrCtx = fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
+			fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
+			machineContext = newMachineContext(metal3io.NewIpam(ctrlMgrCtx.Client, ctrl.LoggerFrom(ctx)), cluster, machine, elfMachine)
+			reconciler = &ElfMachineReconciler{ControllerManagerContext: ctrlMgrCtx}
+			ipPool, err = reconciler.getIPPool(ctx, machineContext, elfMachine.Spec.Network.Devices[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ipPool).To(BeNil())
 		})
