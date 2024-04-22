@@ -17,7 +17,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.13.2
 	github.com/onsi/gomega v1.30.0
 	github.com/pkg/errors v0.9.1
-	github.com/smartxworks/cluster-api-provider-elf v1.3.3-rc.0.0.20240412070309-2f0e706ff1ee
+	github.com/smartxworks/cluster-api-provider-elf v1.4.0-rc.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/mod v0.13.0
 	k8s.io/apiextensions-apiserver v0.28.5
@@ -85,6 +85,7 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/smartxworks/cloudtower-go-sdk/v2 v2.13.1-0.20231116110941-d411454388af // indirect
+	github.com/smartxworks/host-config-agent-api v0.0.0-20240410021405-be1517a07889 // indirect
 	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.10 // indirect
