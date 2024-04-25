@@ -230,7 +230,7 @@ func main() {
 	ctx := ctrl.SetupSignalHandler()
 	mgr, err := capemanager.New(ctx, managerOpts)
 	if err != nil {
-		setupLog.Error(err, "problem creating controller manager")
+		setupLog.Error(err, "failed to create controller manager")
 		os.Exit(1)
 	}
 
@@ -238,7 +238,7 @@ func main() {
 
 	setupLog.Info("starting controller manager")
 	if err := mgr.Start(ctx); err != nil {
-		setupLog.Error(err, "problem running controller manager")
+		setupLog.Error(err, "failed to run controller manager")
 		os.Exit(1)
 	}
 }

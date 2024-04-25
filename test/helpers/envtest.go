@@ -166,7 +166,7 @@ func NewTestEnvironment(ctx goctx.Context) *TestEnvironment {
 		klog.Fatalf("failed to create the SKS controller manager: %v", err)
 	}
 
-	kubeconfig, err := CreateKubeconfig(mgr.GetConfig(), fmt.Sprintf("%s-cluster", capiutil.RandomString(6)))
+	kubeconfig, err := CreateKubeconfig(mgr.GetConfig(), capiutil.RandomString(6)+"-cluster")
 	if err != nil {
 		klog.Fatalf("failed to create kubeconfig: %v", err)
 	}
@@ -231,7 +231,7 @@ func (t *TestEnvironment) CreateNamespace(ctx goctx.Context, name string) (*core
 }
 
 func (t *TestEnvironment) CreateObjects(ctx goctx.Context, objs ...client.Object) error {
-	for i := 0; i < len(objs); i++ {
+	for i := range len(objs) {
 		if err := t.Client.Create(ctx, objs[i]); err != nil {
 			return err
 		}
@@ -287,10 +287,10 @@ func getFilePathsToCAPICRDs(root string) []string {
 
 	var paths []string
 	gopath := envOr("GOPATH", build.Default.GOPATH)
-	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", fmt.Sprintf("cluster-api@%s", clusterAPIVersion), "config", "crd", "bases"))
-	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", fmt.Sprintf("cluster-api@%s", clusterAPIVersion), "controlplane", "kubeadm", "config", "crd", "bases"))
-	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", fmt.Sprintf("cluster-api@%s", clusterAPIVersion), "bootstrap", "kubeadm", "config", "crd", "bases"))
-	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", fmt.Sprintf("cluster-api@%s", clusterAPIVersion), "cmd", "clusterctl", "config", "crd", "bases"))
+	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", "cluster-api@"+clusterAPIVersion, "config", "crd", "bases"))
+	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", "cluster-api@"+clusterAPIVersion, "controlplane", "kubeadm", "config", "crd", "bases"))
+	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", "cluster-api@"+clusterAPIVersion, "bootstrap", "kubeadm", "config", "crd", "bases"))
+	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", "cluster-api@"+clusterAPIVersion, "cmd", "clusterctl", "config", "crd", "bases"))
 
 	return paths
 }
@@ -309,7 +309,7 @@ func getFilePathToCAPECRDs(root string) string {
 
 	gopath := envOr("GOPATH", build.Default.GOPATH)
 
-	return filepath.Join(gopath, "pkg", "mod", "github.com", fmt.Sprintf("smartxworks/cluster-api-provider-elf@%s", capeVersion), "config", "crd", "bases")
+	return filepath.Join(gopath, "pkg", "mod", "github.com", "smartxworks/cluster-api-provider-elf@"+capeVersion, "config", "crd", "bases")
 }
 
 func getFilePathToIPAMCRDs(root string) string {
@@ -326,7 +326,7 @@ func getFilePathToIPAMCRDs(root string) string {
 
 	gopath := envOr("GOPATH", build.Default.GOPATH)
 
-	return filepath.Join(gopath, "pkg", "mod", "github.com", fmt.Sprintf("metal3-io/ip-address-manager@%s", ipamVersion), "config", "crd", "bases")
+	return filepath.Join(gopath, "pkg", "mod", "github.com", "metal3-io/ip-address-manager@"+ipamVersion, "config", "crd", "bases")
 }
 
 func envOr(envKey, defaultValue string) string {
