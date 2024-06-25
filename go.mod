@@ -1,11 +1,9 @@
 module github.com/smartxworks/cluster-api-provider-elf-static-ip
 
-go 1.21.8
-
-toolchain go1.21.9
+go 1.21
 
 require (
-	github.com/metal3-io/ip-address-manager/api v1.6.2
+	github.com/metal3-io/ip-address-manager/api v1.6.3
 	k8s.io/api v0.28.5
 	k8s.io/apimachinery v0.28.5
 	k8s.io/client-go v0.28.5
@@ -17,7 +15,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.13.2
 	github.com/onsi/gomega v1.30.0
 	github.com/pkg/errors v0.9.1
-	github.com/smartxworks/cluster-api-provider-elf v1.4.0-rc.0
+	github.com/smartxworks/cluster-api-provider-elf v1.4.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/mod v0.13.0
 	k8s.io/apiextensions-apiserver v0.28.5
@@ -25,7 +23,7 @@ require (
 	k8s.io/component-base v0.28.5
 	k8s.io/klog/v2 v2.100.1
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
-	sigs.k8s.io/cluster-api v1.6.4
+	sigs.k8s.io/cluster-api v1.6.6
 )
 
 require (
@@ -103,13 +101,13 @@ require (
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.25.0 // indirect
-	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
-	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/oauth2 v0.14.0 // indirect
 	golang.org/x/sync v0.4.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/term v0.18.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
