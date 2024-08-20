@@ -64,13 +64,13 @@ func setup() {
 	// set log
 	klog.InitFlags(nil)
 	if err := flag.Set("logtostderr", "false"); err != nil {
-		_ = fmt.Errorf("Error setting logtostderr flag")
+		panic(fmt.Sprintf("failed to set logtostderr flag: %v", err))
 	}
 	if err := flag.Set("v", "6"); err != nil {
-		_ = fmt.Errorf("Error setting v flag")
+		panic(fmt.Sprintf("failed to set v flag: %v", err))
 	}
 	if err := flag.Set("alsologtostderr", "false"); err != nil {
-		_ = fmt.Errorf("Error setting alsologtostderr flag")
+		panic(fmt.Sprintf("failed to set alsologtostderr flag: %v", err))
 	}
 
 	testEnv = helpers.NewTestEnvironment(ctx)
