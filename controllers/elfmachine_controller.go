@@ -186,7 +186,7 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx goctx.Context, machineCtx *co
 	}
 
 	var errs []error
-	for i := 0; i < len(machineCtx.ElfMachine.Spec.Network.Devices); i++ {
+	for i := range len(machineCtx.ElfMachine.Spec.Network.Devices) {
 		if !ipamutil.IsStaticIPDevice(machineCtx.ElfMachine.Spec.Network.Devices[i]) {
 			continue
 		}
@@ -265,7 +265,7 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx goctx.Context, machineCtx 
 	}()
 
 	requeueAfter := time.Duration(0)
-	for i := 0; i < len(devices); i++ {
+	for i := range len(devices) {
 		if !ipamutil.NeedsAllocateIPForDevice(devices[i]) {
 			continue
 		}

@@ -19,9 +19,7 @@ package helpers
 import (
 	goctx "context"
 	"fmt"
-	"go/build"
 	"os"
-	"path"
 	"path/filepath"
 	goruntime "runtime"
 	"strings"
@@ -31,6 +29,7 @@ import (
 	capev1 "github.com/smartxworks/cluster-api-provider-elf/api/v1beta1"
 	"github.com/smartxworks/cluster-api-provider-elf/pkg/context"
 	"github.com/smartxworks/cluster-api-provider-elf/pkg/manager"
+	"golang.org/x/tools/go/packages"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -82,25 +81,16 @@ func init() {
 	utilruntime.Must(capev1.AddToScheme(scheme))
 	utilruntime.Must(ipamv1.AddToScheme(scheme))
 
-	// Get the root of the current file to use in CRD paths.
-	_, filename, _, _ := goruntime.Caller(0) //nolint
-	root := path.Join(path.Dir(filename), "..", "..")
-
 	crdPaths = []string{}
 
 	// append CAPI CRDs path
-	if capiPaths := getFilePathsToCAPICRDs(root); len(capiPaths) > 0 {
+	if capiPaths := getFilePathToCAPICRDs(); len(capiPaths) > 0 {
 		crdPaths = append(crdPaths, capiPaths...)
 	}
 
 	// append CAPE CRDs path
-	if capePath := getFilePathToCAPECRDs(root); capePath != "" {
+	if capePath := getFilePathToCAPECRDs(); capePath != "" {
 		crdPaths = append(crdPaths, capePath)
-	}
-
-	// append IPAM CRDs path
-	if ipamPath := getFilePathToIPAMCRDs(root); ipamPath != "" {
-		crdPaths = append(crdPaths, ipamPath)
 	}
 }
 
@@ -166,7 +156,7 @@ func NewTestEnvironment(ctx goctx.Context) *TestEnvironment {
 		klog.Fatalf("failed to create the SKS controller manager: %v", err)
 	}
 
-	kubeconfig, err := CreateKubeconfig(mgr.GetConfig(), fmt.Sprintf("%s-cluster", capiutil.RandomString(6)))
+	kubeconfig, err := CreateKubeconfig(mgr.GetConfig(), capiutil.RandomString(6)+"-cluster")
 	if err != nil {
 		klog.Fatalf("failed to create kubeconfig: %v", err)
 	}
@@ -231,7 +221,7 @@ func (t *TestEnvironment) CreateNamespace(ctx goctx.Context, name string) (*core
 }
 
 func (t *TestEnvironment) CreateObjects(ctx goctx.Context, objs ...client.Object) error {
-	for i := 0; i < len(objs); i++ {
+	for i := range len(objs) {
 		if err := t.Client.Create(ctx, objs[i]); err != nil {
 			return err
 		}
@@ -273,66 +263,37 @@ func CreateKubeconfig(cfg *rest.Config, clusterName string) (string, error) {
 	return kubeconfig, nil
 }
 
-func getFilePathsToCAPICRDs(root string) []string {
-	mod, err := NewMod(filepath.Join(root, "go.mod"))
-	if err != nil {
-		return nil
-	}
-
+func getFilePathToCAPICRDs() []string {
 	packageName := "sigs.k8s.io/cluster-api"
-	clusterAPIVersion, err := mod.FindDependencyVersion(packageName)
+	packageConfig := &packages.Config{
+		Mode: packages.NeedModule,
+	}
+
+	pkgs, err := packages.Load(packageConfig, packageName)
 	if err != nil {
 		return nil
 	}
 
-	var paths []string
-	gopath := envOr("GOPATH", build.Default.GOPATH)
-	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", fmt.Sprintf("cluster-api@%s", clusterAPIVersion), "config", "crd", "bases"))
-	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", fmt.Sprintf("cluster-api@%s", clusterAPIVersion), "controlplane", "kubeadm", "config", "crd", "bases"))
-	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", fmt.Sprintf("cluster-api@%s", clusterAPIVersion), "bootstrap", "kubeadm", "config", "crd", "bases"))
-	paths = append(paths, filepath.Join(gopath, "pkg", "mod", "sigs.k8s.io", fmt.Sprintf("cluster-api@%s", clusterAPIVersion), "cmd", "clusterctl", "config", "crd", "bases"))
+	pkg := pkgs[0]
 
-	return paths
+	return []string{
+		filepath.Join(pkg.Module.Dir, "config", "crd", "bases"),
+		filepath.Join(pkg.Module.Dir, "controlplane", "kubeadm", "config", "crd", "bases"),
+	}
 }
 
-func getFilePathToCAPECRDs(root string) string {
-	mod, err := NewMod(filepath.Join(root, "go.mod"))
-	if err != nil {
-		return ""
-	}
-
+func getFilePathToCAPECRDs() string {
 	packageName := "github.com/smartxworks/cluster-api-provider-elf"
-	capeVersion, err := mod.FindDependencyVersion(packageName)
+	packageConfig := &packages.Config{
+		Mode: packages.NeedModule,
+	}
+
+	pkgs, err := packages.Load(packageConfig, packageName)
 	if err != nil {
 		return ""
 	}
 
-	gopath := envOr("GOPATH", build.Default.GOPATH)
+	pkg := pkgs[0]
 
-	return filepath.Join(gopath, "pkg", "mod", "github.com", fmt.Sprintf("smartxworks/cluster-api-provider-elf@%s", capeVersion), "config", "crd", "bases")
-}
-
-func getFilePathToIPAMCRDs(root string) string {
-	mod, err := NewMod(filepath.Join(root, "go.mod"))
-	if err != nil {
-		return ""
-	}
-
-	packageName := "github.com/metal3-io/ip-address-manager"
-	ipamVersion, err := mod.FindDependencyVersion(packageName)
-	if err != nil {
-		return ""
-	}
-
-	gopath := envOr("GOPATH", build.Default.GOPATH)
-
-	return filepath.Join(gopath, "pkg", "mod", "github.com", fmt.Sprintf("metal3-io/ip-address-manager@%s", ipamVersion), "config", "crd", "bases")
-}
-
-func envOr(envKey, defaultValue string) string {
-	if value, ok := os.LookupEnv(envKey); ok {
-		return value
-	}
-
-	return defaultValue
+	return filepath.Join(pkg.Module.Dir, "config", "crd", "bases")
 }

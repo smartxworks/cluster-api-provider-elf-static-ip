@@ -31,7 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apitypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capiutil "sigs.k8s.io/cluster-api/util"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -80,7 +80,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 	It("should not reconcile when ElfMachine in an error state", func() {
 		ctrlutil.AddFinalizer(elfMachine, capev1.MachineFinalizer)
 		ctrlutil.AddFinalizer(elfMachine, MachineStaticIPFinalizer)
-		elfMachine.Status.FailureMessage = pointer.String("some error")
+		elfMachine.Status.FailureMessage = ptr.To("some error")
 		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate)
 		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
@@ -340,7 +340,7 @@ var _ = Describe("ElfMachineReconciler", func() {
 			metal3IPPool.Namespace = elfMachine.Namespace
 			elfMachine.Spec.Network.Devices = []capev1.NetworkDeviceSpec{
 				{NetworkType: capev1.NetworkTypeIPV4, IPAddrs: []string{}, AddressesFromPools: []corev1.TypedLocalObjectReference{
-					{APIGroup: pointer.String("ipam.metal3.io"), Kind: "IPPool", Name: metal3IPPool.Name},
+					{APIGroup: ptr.To("ipam.metal3.io"), Kind: "IPPool", Name: metal3IPPool.Name},
 				}},
 			}
 			ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)

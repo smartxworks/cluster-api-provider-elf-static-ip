@@ -47,12 +47,12 @@ func NewIpam(client client.Client, logger logr.Logger) ipam.IPAddressManager {
 func (m *Metal3IPAM) GetIP(ctx goctx.Context, ipName string, ipPool ipam.IPPool) (ipam.IPAddress, error) {
 	ipClaim, err := m.getIPClaim(ctx, ipPool, ipName)
 	if err != nil {
-		m.logger.Info(fmt.Sprintf("failed to get IPClaim %s", ipName))
+		m.logger.Info("failed to get IPClaim " + ipName)
 		return nil, err
 	}
 
 	if ipClaim == nil || ipClaim.Status.Address == nil {
-		m.logger.Info(fmt.Sprintf("Waiting for IPClaim %s", ipName))
+		m.logger.Info("Waiting for IPClaim " + ipName)
 		return nil, nil
 	}
 
@@ -70,7 +70,7 @@ func (m *Metal3IPAM) GetIP(ctx goctx.Context, ipName string, ipPool ipam.IPPool)
 func (m *Metal3IPAM) AllocateIP(ctx goctx.Context, ipName string, pool ipam.IPPool, owner metav1.Object) (ipam.IPAddress, error) {
 	ipClaim, err := m.getIPClaim(ctx, pool, ipName)
 	if err != nil {
-		m.logger.Info(fmt.Sprintf("failed to get IPClaim %s", ipName))
+		m.logger.Info("failed to get IPClaim " + ipName)
 		return nil, err
 	}
 
@@ -98,7 +98,7 @@ func (m *Metal3IPAM) ReleaseIP(ctx goctx.Context, ipName string, pool ipam.IPPoo
 	}
 
 	if err := m.Client.Delete(ctx, ipClaim); err != nil {
-		message := fmt.Sprintf("failed to delete IPClaim %s", ipName)
+		message := "failed to delete IPClaim " + ipName
 		m.logger.Error(err, message)
 
 		return errors.Wrapf(err, message)
@@ -117,7 +117,7 @@ func (m *Metal3IPAM) ReleaseIPs(ctx goctx.Context, owner metav1.Object, pool ipa
 		return 0, err
 	}
 
-	for i := 0; i < len(ipClaimList.Items); i++ {
+	for i := range len(ipClaimList.Items) {
 		if err := m.Client.Delete(ctx, &ipClaimList.Items[i]); err != nil {
 			return 0, errors.Wrapf(err, "failed to delete IPClaim %s", ipClaimList.Items[i].Name)
 		}
@@ -223,13 +223,13 @@ func (m *Metal3IPAM) getIPClaim(ctx goctx.Context, pool ipam.IPPool, claimName s
 }
 
 func (m *Metal3IPAM) createIPClaim(ctx goctx.Context, pool ipam.IPPool, claimName string, owner metav1.Object) error {
-	m.logger.Info(fmt.Sprintf("Creating IPClaim %s", claimName))
+	m.logger.Info("Creating IPClaim " + claimName)
 
 	var ipPool ipamv1.IPPool
 	if err := m.Client.Get(ctx, apitypes.NamespacedName{
 		Namespace: pool.GetNamespace(),
 		Name:      pool.GetName()}, &ipPool); err != nil {
-		m.logger.Info(fmt.Sprintf("failed to get IPPool %s", pool.GetName()))
+		m.logger.Info("failed to get IPPool " + pool.GetName())
 		return ipamutil.IgnoreNotFound(err)
 	}
 

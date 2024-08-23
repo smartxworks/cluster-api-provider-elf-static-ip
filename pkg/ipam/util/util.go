@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"errors"
 	"fmt"
 
 	capev1 "github.com/smartxworks/cluster-api-provider-elf/api/v1beta1"
@@ -67,11 +68,11 @@ func NeedsAllocateIPForDevice(device capev1.NetworkDeviceSpec) bool {
 
 func ValidateIP(ip ipam.IPAddress) error {
 	if ip.GetAddress() == "" {
-		return fmt.Errorf("invalid 'address' in IPAddress")
+		return errors.New("invalid 'address' in IPAddress")
 	}
 
 	if ip.GetMask() == "" {
-		return fmt.Errorf("invalid 'mask' in IPAddress")
+		return errors.New("invalid 'mask' in IPAddress")
 	}
 
 	return nil
@@ -80,7 +81,7 @@ func ValidateIP(ip ipam.IPAddress) error {
 func LimitDNSServers(sourceDNSServers []string) []string {
 	dnsServers := []string{}
 	set := make(map[string]struct{}, len(sourceDNSServers))
-	for i := 0; i < len(sourceDNSServers); i++ {
+	for i := range len(sourceDNSServers) {
 		if _, ok := set[sourceDNSServers[i]]; ok {
 			continue
 		}
