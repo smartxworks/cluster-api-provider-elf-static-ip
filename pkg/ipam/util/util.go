@@ -81,7 +81,7 @@ func ValidateIP(ip ipam.IPAddress) error {
 func LimitDNSServers(sourceDNSServers []string) []string {
 	dnsServers := []string{}
 	set := make(map[string]struct{}, len(sourceDNSServers))
-	for i := range len(sourceDNSServers) {
+	for i := range sourceDNSServers {
 		if _, ok := set[sourceDNSServers[i]]; ok {
 			continue
 		}

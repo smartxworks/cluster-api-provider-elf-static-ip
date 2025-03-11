@@ -23,7 +23,7 @@ SHELL := /usr/bin/env bash
 #
 # Go.
 #
-GO_VERSION ?= 1.22.5
+GO_VERSION ?= 1.23.7
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -104,15 +104,15 @@ controller-gen: ## Download controller-gen locally if necessary.
 
 GINKGO := $(shell pwd)/bin/ginkgo
 ginkgo: ## Download ginkgo locally if necessary.
-	$(call go-get-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo@v2.20.0)
+	$(call go-get-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo@v2.23.0)
 
 KIND := $(shell pwd)/bin/kind
 kind: ## Download kind locally if necessary.
-	$(call go-get-tool,$(KIND),sigs.k8s.io/kind@v0.22.0)
+	$(call go-get-tool,$(KIND),sigs.k8s.io/kind@v0.24.0)
 
 GOLANGCI_LINT := $(shell pwd)/bin/golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.57.2)
+	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.6)
 
 ## --------------------------------------
 ## Linting and fixing linter errors

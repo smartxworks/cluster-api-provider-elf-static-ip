@@ -266,7 +266,7 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx goctx.Context, machineCtx 
 	}()
 
 	requeueAfter := time.Duration(0)
-	for i := range len(devices) {
+	for i := range devices {
 		if !ipamutil.NeedsAllocateIPForDevice(devices[i]) {
 			continue
 		}

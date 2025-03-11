@@ -221,7 +221,7 @@ func (t *TestEnvironment) CreateNamespace(ctx goctx.Context, name string) (*core
 }
 
 func (t *TestEnvironment) CreateObjects(ctx goctx.Context, objs ...client.Object) error {
-	for i := range len(objs) {
+	for i := range objs {
 		if err := t.Client.Create(ctx, objs[i]); err != nil {
 			return err
 		}
