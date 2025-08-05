@@ -80,7 +80,6 @@ var (
 	defaultSyncPeriod       = manager.DefaultSyncPeriod
 	defaultLeaderElectionID = manager.DefaultLeaderElectionID
 	defaultPodName          = manager.DefaultPodName
-	defaultWebhookPort      = capemanager.DefaultWebhookServiceContainerPort
 )
 
 // InitFlags initializes the flags.
@@ -137,11 +136,17 @@ func InitFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&restConfigBurst, "kube-api-burst", 30,
 		"Maximum number of queries that should be allowed in one burst from the controller client to the Kubernetes API server. Default 30")
 
-	fs.IntVar(&webhookOpts.Port, "webhook-port", defaultWebhookPort,
-		"Webhook Server port")
+	fs.IntVar(&webhookOpts.Port, "webhook-port", 9443,
+		"Webhook Server port.")
 
 	fs.StringVar(&webhookOpts.CertDir, "webhook-cert-dir", "/tmp/k8s-webhook-server/serving-certs/",
-		"Webhook cert dir, only used when webhook-port is specified.")
+		"Webhook cert dir.")
+
+	fs.StringVar(&webhookOpts.CertName, "webhook-cert-name", "tls.crt",
+		"Webhook cert name.")
+
+	fs.StringVar(&webhookOpts.KeyName, "webhook-key-name", "tls.key",
+		"Webhook key name.")
 
 	fs.StringVar(&managerOpts.HealthProbeBindAddress, "health-addr", ":9440",
 		"The address the health endpoint binds to.")
@@ -155,6 +160,8 @@ func InitFlags(fs *pflag.FlagSet) {
 // +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 
 func main() {
+	setupLog.Info("Creating controller manager", "version", version.Get().String())
+
 	InitFlags(pflag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
@@ -223,9 +230,9 @@ func main() {
 	managerOpts.AddToManager = addToManager
 	managerOpts.Metrics = *metricsOptions
 
-	setupLog.Info("creating controller manager", "version", version.Get().String())
 	// Set up the context that's going to be used in controllers and for the manager.
 	ctx := ctrl.SetupSignalHandler()
+
 	mgr, err := capemanager.New(ctx, managerOpts)
 	if err != nil {
 		setupLog.Error(err, "failed to create controller manager")
