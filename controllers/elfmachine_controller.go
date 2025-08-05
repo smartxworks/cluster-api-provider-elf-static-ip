@@ -79,11 +79,12 @@ func AddMachineControllerToManager(ctx goctx.Context, ctrlMgrCtx *capecontext.Co
 	reconciler := &ElfMachineReconciler{
 		ControllerManagerContext: ctrlMgrCtx,
 	}
+	predicateLog := ctrl.LoggerFrom(ctx).WithValues("controller", "elfmachine")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(controlledType).
 		WithOptions(options).
-		WithEventFilter(predicates.ResourceNotPausedAndHasFilterLabel(ctrl.LoggerFrom(ctx), ctrlMgrCtx.WatchFilterValue)).
+		WithEventFilter(predicates.ResourceNotPausedAndHasFilterLabel(mgr.GetScheme(), predicateLog, ctrlMgrCtx.WatchFilterValue)).
 		Complete(reconciler)
 }
 
