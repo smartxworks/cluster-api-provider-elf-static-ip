@@ -36,16 +36,18 @@ import (
 	"k8s.io/component-base/logs"
 	logsv1 "k8s.io/component-base/logs/api/v1"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/ptr"
+	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/cluster-api/feature"
 	capiflags "sigs.k8s.io/cluster-api/util/flags"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlmgr "sigs.k8s.io/controller-runtime/pkg/manager"
@@ -229,6 +231,9 @@ func main() {
 	managerOpts.WebhookServer = webhook.NewServer(webhookOpts)
 	managerOpts.AddToManager = addToManager
 	managerOpts.Metrics = *metricsOptions
+	managerOpts.Controller = ctrlconfig.Controller{
+		UsePriorityQueue: ptr.To[bool](feature.Gates.Enabled(feature.PriorityQueue)),
+	}
 
 	// Set up the context that's going to be used in controllers and for the manager.
 	ctx := ctrl.SetupSignalHandler()
