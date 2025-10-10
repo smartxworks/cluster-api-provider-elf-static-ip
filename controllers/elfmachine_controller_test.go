@@ -253,7 +253,6 @@ var _ = Describe("ElfMachineReconciler", func() {
 		metal3IPClaim, metal3IPAddress = fake.NewMetal3IPObjects(metal3IPPool, ipamutil.GetFormattedClaimName(elfMachine.Namespace, elfMachine.Name, 0))
 		metal3IPAddress.Spec.DNSServers = append(metal3IPAddress.Spec.DNSServers, ipamv1.IPAddressStr("2.2.2.2"), ipamv1.IPAddressStr("3.3.3.3"))
 		setMetal3IPForClaim(metal3IPClaim, metal3IPAddress)
-		elfMachine.Spec.Network.Nameservers = []string{"3.3.3.3"}
 		ctrlMgrCtx := fake.NewControllerManagerContext(elfCluster, cluster, elfMachine, machine, elfMachineTemplate, metal3IPPool, metal3IPClaim, metal3IPAddress)
 		fake.InitOwnerReferences(ctx, ctrlMgrCtx, elfCluster, cluster, elfMachine, machine)
 
@@ -262,9 +261,13 @@ var _ = Describe("ElfMachineReconciler", func() {
 		Expect(result).To(BeZero())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(ctrlMgrCtx.Client.Get(ctx, capiutil.ObjectKey(elfMachine), elfMachine)).To(Succeed())
+		Expect(elfMachine.Spec.Network.Nameservers).To(BeEmpty())
 		Expect(elfMachine.Spec.Network.Devices[0].IPAddrs).To(Equal([]string{string(metal3IPAddress.Spec.Address)}))
-		// DNS server is unique and DNS server priority of ElfMachine is higher than IPPool.
-		Expect(elfMachine.Spec.Network.Nameservers).To(Equal([]string{"3.3.3.3", "2.2.2.2", "1.1.1.1"}))
+		dnsServers := make([]string, 0, len(metal3IPAddress.Spec.DNSServers))
+		for i := range len(metal3IPAddress.Spec.DNSServers) {
+			dnsServers = append(dnsServers, string(metal3IPAddress.Spec.DNSServers[i]))
+		}
+		Expect(elfMachine.Spec.Network.Devices[0].Nameservers).To(Equal(dnsServers))
 		Expect(ctrlutil.ContainsFinalizer(elfMachine, MachineStaticIPFinalizer)).To(BeTrue())
 	})
 

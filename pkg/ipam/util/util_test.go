@@ -24,28 +24,6 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-func TestLimitDNSServers(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	testCases := []struct {
-		name             string
-		sourceDNSServers []string
-		dnsServers       []string
-	}{
-		{"should return empty server", []string{}, []string{}},
-		{"should return one server", []string{"1.1.1.1"}, []string{"1.1.1.1"}},
-		{"should filter duplicate servers", []string{"1.1.1.1", "1.1.1.1"}, []string{"1.1.1.1"}},
-		{"should limit servers", []string{"1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4"}, []string{"1.1.1.1", "2.2.2.2", "3.3.3.3"}},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			dnsServers := LimitDNSServers(tc.sourceDNSServers)
-			g.Expect(dnsServers).To(gomega.Equal(tc.dnsServers))
-		})
-	}
-}
-
 func TestIsMetal3IPPoolRef(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 

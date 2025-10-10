@@ -260,12 +260,6 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx goctx.Context, machineCtx 
 		return ctrl.Result{}, nil
 	}
 
-	defer func() {
-		if len(machineCtx.ElfMachine.Spec.Network.Nameservers) > 0 {
-			machineCtx.ElfMachine.Spec.Network.Nameservers = ipamutil.LimitDNSServers(machineCtx.ElfMachine.Spec.Network.Nameservers)
-		}
-	}()
-
 	requeueAfter := time.Duration(0)
 	for i := range devices {
 		if !ipamutil.NeedsAllocateIPForDevice(devices[i]) {
@@ -285,10 +279,6 @@ func (r *ElfMachineReconciler) reconcileIPAddress(ctx goctx.Context, machineCtx 
 		if err != nil {
 			log.Error(err, fmt.Sprintf("failed to set IP address for device %d", i))
 			return reconcile.Result{}, err
-		}
-
-		if requeueAfter == 0 && len(ipPool.GetDNSServers()) > 0 {
-			machineCtx.ElfMachine.Spec.Network.Nameservers = append(machineCtx.ElfMachine.Spec.Network.Nameservers, ipPool.GetDNSServers()...)
 		}
 
 		if result.RequeueAfter != 0 {
@@ -330,7 +320,7 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx goctx.Context, machi
 		device.Routes = []capev1.NetworkDeviceRouteSpec{{Gateway: ip.GetGateway()}}
 	}
 	if len(ip.GetDNSServers()) > 0 {
-		machineCtx.ElfMachine.Spec.Network.Nameservers = append(machineCtx.ElfMachine.Spec.Network.Nameservers, ip.GetDNSServers()...)
+		device.Nameservers = ip.GetDNSServers()
 	}
 
 	return ctrl.Result{}, nil
