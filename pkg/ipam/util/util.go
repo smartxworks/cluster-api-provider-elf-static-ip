@@ -78,26 +78,6 @@ func ValidateIP(ip ipam.IPAddress) error {
 	return nil
 }
 
-func LimitDNSServers(sourceDNSServers []string) []string {
-	dnsServers := []string{}
-	set := make(map[string]struct{}, len(sourceDNSServers))
-	for i := range sourceDNSServers {
-		if _, ok := set[sourceDNSServers[i]]; ok {
-			continue
-		}
-
-		dnsServers = append(dnsServers, sourceDNSServers[i])
-		set[sourceDNSServers[i]] = struct{}{}
-	}
-
-	limit := DNSServerLimit
-	if limit > len(dnsServers) {
-		limit = len(dnsServers)
-	}
-
-	return dnsServers[:limit]
-}
-
 func IgnoreNotFound(err error) error {
 	if apierrors.IsNotFound(err) {
 		return nil
