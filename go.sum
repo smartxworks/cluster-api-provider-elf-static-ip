@@ -305,6 +305,8 @@ github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3I
 github.com/openlyinc/pointy v1.2.0/go.mod h1:JodZOTJoBNaAQHeU0F/SwA4PL0lg4pKF7fYFpX291P0=
 github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
+github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
+github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 github.com/pelletier/go-toml v1.7.0/go.mod h1:vwGMzjaWMwyfHwgIBhI2YUM4fB6nL6lVAvS1LBMMhTE=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
@@ -340,8 +342,10 @@ github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ
 github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/smartxworks/cloudtower-go-sdk/v2 v2.21.0-rc.2 h1:jM/uytG4DXkkgfJ9FlGS7/BaYE8IyDvj/73TMoemwmc=
 github.com/smartxworks/cloudtower-go-sdk/v2 v2.21.0-rc.2/go.mod h1:X6R9+L438SMnLJXykSCV3fJ+AZul0hlyjITsZgrSRtM=
-github.com/smartxworks/cluster-api-provider-elf v1.7.2 h1:JG5i5TW9oZnFdlOFxgF+txOjp4NLcSx/HsvxmipgI9Q=
-github.com/smartxworks/cluster-api-provider-elf v1.7.2/go.mod h1:+FvyhyKVeOcxhow3KuJMg+OTFAHbh2hDXDFQLq7vEGg=
+github.com/smartxworks/cluster-api-provider-elf v1.7.5-0.20260311062916-5d73bf704848 h1:FfXyVsv5qJGDBZEEa8MulSJW3reXYG/IC18twl68kRo=
+github.com/smartxworks/cluster-api-provider-elf v1.7.5-0.20260311062916-5d73bf704848/go.mod h1:DLsR7YGwGDAcxits8ZyD+mjak4AgUjCMqyY5XmlDNuY=
+github.com/smartxworks/cluster-api-provider-elf v1.7.5-0.20260318064843-c978d3b7fb46 h1:BRUZ1qfP7Vrx9nZ/R+b4t37VfLDS5LCmA0SaXLKk0oU=
+github.com/smartxworks/cluster-api-provider-elf v1.7.5-0.20260318064843-c978d3b7fb46/go.mod h1:DLsR7YGwGDAcxits8ZyD+mjak4AgUjCMqyY5XmlDNuY=
 github.com/smartxworks/host-config-agent-api v0.0.0-20240410021405-be1517a07889 h1:kXlP3d9BEE6q31cR3qAehK0BKNVuCZ6jT2t+Jf5Gwrs=
 github.com/smartxworks/host-config-agent-api v0.0.0-20240410021405-be1517a07889/go.mod h1:oexROTOhF0Ium/iTwRbwXwZy+eGkzYE5a5qe3HvvKug=
 github.com/soheilhy/cmux v0.1.5 h1:jjzc5WVemNEDTLwv9tlmemhC73tI08BNOIGwBOo10Js=
