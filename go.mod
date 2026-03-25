@@ -15,7 +15,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
 	github.com/pkg/errors v0.9.1
-	github.com/smartxworks/cluster-api-provider-elf v1.7.5-0.20260318064843-c978d3b7fb46
+	github.com/smartxworks/cluster-api-provider-elf v0.0.0-fd.0
 	github.com/spf13/pflag v1.0.6
 	golang.org/x/mod v0.24.0
 	golang.org/x/tools v0.31.0
@@ -29,7 +29,6 @@ require (
 
 require (
 	cel.dev/expr v0.18.0 // indirect
-	github.com/Masterminds/semver/v3 v3.3.0 // indirect
 	github.com/NYTimes/gziphandler v1.1.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
@@ -77,7 +76,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
-	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
