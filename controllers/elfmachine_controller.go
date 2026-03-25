@@ -170,12 +170,7 @@ func (r *ElfMachineReconciler) Reconcile(ctx goctx.Context, req ctrl.Request) (_
 func (r *ElfMachineReconciler) reconcileDelete(ctx goctx.Context, machineCtx *context.MachineContext) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	network := machineCtx.ElfMachine.GetNetwork()
-	if network == nil {
-		log.V(1).Info("No network configuration found, so no need to release the IP")
-		return ctrl.Result{}, nil
-	}
-
+	network := machineCtx.GetNetwork()
 	if !ipamutil.HasStaticIPDevice(network.Devices) {
 		if ctrlutil.ContainsFinalizer(machineCtx.ElfMachine, MachineStaticIPFinalizer) {
 			log.V(1).Info("No static IP network device found, but MachineStaticIPFinalizer is set and remove it")
@@ -226,12 +221,7 @@ func (r *ElfMachineReconciler) reconcileDelete(ctx goctx.Context, machineCtx *co
 func (r *ElfMachineReconciler) reconcileIPAddress(ctx goctx.Context, machineCtx *context.MachineContext) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	network := machineCtx.ElfMachine.GetNetwork()
-	if network == nil {
-		log.V(6).Info("No network configuration found")
-		return ctrl.Result{}, nil
-	}
-	devices := network.Devices
+	devices := machineCtx.GetNetwork().Devices
 	if !ipamutil.HasStaticIPDevice(devices) {
 		log.V(6).Info("No static IP network device found")
 		return ctrl.Result{}, nil
@@ -324,7 +314,7 @@ func (r *ElfMachineReconciler) reconcileDeviceIPAddress(ctx goctx.Context, machi
 
 	log.V(1).Info("Static IP selected", "IPAddress", ip.GetName())
 
-	device := &machineCtx.ElfMachine.GetNetwork().Devices[index]
+	device := &machineCtx.GetNetwork().Devices[index]
 	device.IPAddrs = []string{ip.GetAddress()}
 	device.Netmask = ip.GetMask()
 	if ip.GetGateway() != "" {
