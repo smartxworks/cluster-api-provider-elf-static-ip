@@ -24,7 +24,7 @@ import (
 	capefake "github.com/smartxworks/cluster-api-provider-elf/test/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/storage/names"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	capiv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 )
 
 func NewClusterAndMachineObjects() (*capev1.ElfCluster, *capiv1.Cluster, *capev1.ElfMachine, *capiv1.Machine, *capev1.ElfMachineTemplate) {
