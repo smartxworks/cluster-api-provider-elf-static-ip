@@ -88,15 +88,15 @@ linters-settings:
       - pkg: sigs.k8s.io/controller-runtime/pkg/controller/controllerutil
         alias: ctrlutil
       # CAPI
-      - pkg: sigs.k8s.io/cluster-api/api/v1beta1
+      - pkg: sigs.k8s.io/cluster-api/api/core/v1beta1
         alias: capiv1
       - pkg: sigs.k8s.io/cluster-api/errors
         alias: capierrors
       - pkg: sigs.k8s.io/cluster-api/util
         alias: capiutil
-      - pkg: sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1
+      - pkg: sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1
         alias: bootstrapv1
-      - pkg: sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1
+      - pkg: sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1
         alias: controlplanev1
       - pkg: sigs.k8s.io/cluster-api/test/e2e
         alias: capie2e
@@ -104,9 +104,9 @@ linters-settings:
       - pkg: github.com/smartxworks/cluster-api-provider-elf/api/v1beta1
         alias: capev1
   staticcheck:
-    go: "1.23"
+    go: "1.25"
   stylecheck:
-    go: "1.23"
+    go: "1.25"
 issues:
   max-same-issues: 0
   max-issues-per-linter: 0
@@ -166,10 +166,22 @@ issues:
       text: should not use dot imports
     - path: _test\.go
       text: cyclomatic complexity
+    - linters:
+      - staticcheck
+      text: 'SA1019: "sigs.k8s.io/cluster-api/api/core/v1beta1" is deprecated:'
+    - linters:
+      - staticcheck
+      text: 'SA1019: "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1" is deprecated:'
+    - linters:
+      - staticcheck
+      text: 'SA1019: "sigs.k8s.io/cluster-api/api/addons/v1beta1" is deprecated:'
+    - linters:
+      - staticcheck
+      text: 'SA1019: "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1" is deprecated:'
 
 run:
   timeout: 10m
-  go: "1.23"
+  go: "1.25"
   skip-files:
   - "zz_generated.*\\.go$"
   allow-parallel-runners: true

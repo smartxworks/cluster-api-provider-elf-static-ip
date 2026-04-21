@@ -24,12 +24,11 @@ import (
 	"github.com/pkg/errors"
 	capev1 "github.com/smartxworks/cluster-api-provider-elf/api/v1beta1"
 	capecontext "github.com/smartxworks/cluster-api-provider-elf/pkg/context"
+	capieutil "github.com/smartxworks/cluster-api-provider-elf/pkg/util/capi"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apitypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	capiutil "sigs.k8s.io/cluster-api/util"
-	"sigs.k8s.io/cluster-api/util/annotations"
+	capiv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/cluster-api/util/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -103,7 +102,7 @@ func (r *ElfMachineReconciler) Reconcile(ctx goctx.Context, req ctrl.Request) (_
 	}
 
 	// Fetch the CAPI Machine.
-	machine, err := capiutil.GetOwnerMachine(ctx, r.Client, elfMachine.ObjectMeta)
+	machine, err := capieutil.GetOwnerMachine(ctx, r.Client, elfMachine.ObjectMeta)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -115,13 +114,13 @@ func (r *ElfMachineReconciler) Reconcile(ctx goctx.Context, req ctrl.Request) (_
 	ctx = ctrl.LoggerInto(ctx, log)
 
 	// Fetch the CAPI Cluster.
-	cluster, err := capiutil.GetClusterFromMetadata(ctx, r.Client, machine.ObjectMeta)
+	cluster, err := capieutil.GetClusterFromMetadata(ctx, r.Client, machine.ObjectMeta)
 	if err != nil {
 		log.Info("Machine is missing cluster label or cluster does not exist")
 
 		return reconcile.Result{}, nil
 	}
-	if annotations.IsPaused(cluster, &elfMachine) {
+	if capieutil.IsPaused(cluster, &elfMachine) {
 		log.V(2).Info("ElfMachine linked to a cluster that is paused")
 
 		return reconcile.Result{}, nil
