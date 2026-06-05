@@ -322,8 +322,8 @@ github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMB
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/smartxworks/cloudtower-go-sdk/v2 v2.21.0-rc.2 h1:jM/uytG4DXkkgfJ9FlGS7/BaYE8IyDvj/73TMoemwmc=
 github.com/smartxworks/cloudtower-go-sdk/v2 v2.21.0-rc.2/go.mod h1:X6R9+L438SMnLJXykSCV3fJ+AZul0hlyjITsZgrSRtM=
-github.com/smartxworks/cluster-api-provider-elf v1.8.0-capi.0 h1:jH5MLHehtJMDJIa2dheqfwuYtJ2X2zQj6D/leAXxn6U=
-github.com/smartxworks/cluster-api-provider-elf v1.8.0-capi.0/go.mod h1:xOUiJAWatIkgpcHVNaPt+4Z2QYGoxxISq/RAfXEXDXA=
+github.com/smartxworks/cluster-api-provider-elf v1.7.5-fd.4.0.20260605070344-f0eb57d32bc2 h1:fDSUBDmPXrFJ0QIF0rbyZ/xvTzs0mbZlgfxEFCVsIIw=
+github.com/smartxworks/cluster-api-provider-elf v1.7.5-fd.4.0.20260605070344-f0eb57d32bc2/go.mod h1:MF+E2G1dgUVWrq2zRbqRrGn878wmnGg4CBFxQKc7MN8=
 github.com/smartxworks/host-config-agent-api v0.0.0-20240410021405-be1517a07889 h1:kXlP3d9BEE6q31cR3qAehK0BKNVuCZ6jT2t+Jf5Gwrs=
 github.com/smartxworks/host-config-agent-api v0.0.0-20240410021405-be1517a07889/go.mod h1:oexROTOhF0Ium/iTwRbwXwZy+eGkzYE5a5qe3HvvKug=
 github.com/spf13/cast v1.7.1 h1:cuNEagBQEHWN1FnbGEjCXL2szYEXqfJPbP2HNUaca9Y=
