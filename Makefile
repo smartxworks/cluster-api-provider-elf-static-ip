@@ -87,8 +87,16 @@ help: ## Display this help.
 ## Testing
 ## --------------------------------------
 
+ENVTEST ?= $(BIN_DIR)/setup-envtest
+ENVTEST_K8S_VERSION ?= 1.33.0
+ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
+
+.PHONY: envtest
+envtest: ## Download setup-envtest locally if necessary.
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@$(ENVTEST_VERSION))
+
 test: generate ## Run tests.
-	source ./hack/fetch_ext_bins.sh; fetch_tools; setup_envs; go test -v ./controllers/... ./pkg/... -coverprofile=cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(BIN_DIR) -p path)" go test -v ./controllers/... ./pkg/... -coverprofile=cover.out
 
 ## --------------------------------------
 ## Tooling Binaries
