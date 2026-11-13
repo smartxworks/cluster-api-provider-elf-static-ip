@@ -1,6 +1,6 @@
 module github.com/smartxworks/cluster-api-provider-elf-static-ip
 
-go 1.25.9
+go 1.26.10
 
 require (
 	github.com/metal3-io/ip-address-manager/api v1.11.6
@@ -15,7 +15,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.3
 	github.com/pkg/errors v0.9.1
-	github.com/smartxworks/cluster-api-provider-elf v1.8.0-beta.0
+	github.com/smartxworks/cluster-api-provider-elf v1.8.6
 	github.com/spf13/pflag v1.0.7
 	golang.org/x/mod v0.31.0
 	golang.org/x/tools v0.40.0
@@ -24,7 +24,7 @@ require (
 	k8s.io/component-base v0.33.9
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
-	sigs.k8s.io/cluster-api v1.11.8
+	sigs.k8s.io/cluster-api v1.11.11
 )
 
 require (
@@ -80,7 +80,7 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/smartxworks/cloudtower-go-sdk/v2 v2.21.0-rc.2 // indirect
+	github.com/smartxworks/cloudtower-go-sdk/v2 v2.24.0-rc.9 // indirect
 	github.com/smartxworks/host-config-agent-api v0.0.0-20240410021405-be1517a07889 // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
