@@ -28,7 +28,7 @@ import (
 	capev1 "github.com/smartxworks/cluster-api-provider-elf/api/v1beta1"
 	capecontext "github.com/smartxworks/cluster-api-provider-elf/pkg/context"
 	"k8s.io/klog/v2"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	capiv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 

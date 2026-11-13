@@ -101,7 +101,7 @@ func (m *Metal3IPAM) ReleaseIP(ctx goctx.Context, ipName string, pool ipam.IPPoo
 		message := "failed to delete IPClaim " + ipName
 		m.logger.Error(err, message)
 
-		return errors.Wrapf(err, message)
+		return errors.Wrap(err, message)
 	}
 
 	m.logger.Info(fmt.Sprintf("IPClaim %s already deleted", ipName))
